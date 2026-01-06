@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Componentes Ativos - Louvor</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --accent: #27ae60;
+      --bg: #f4f7f6;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .comp-card {
+      background: white;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .comp-header {
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      gap: 15px;
+    }
+
+    .avatar {
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #eee;
+      border: 2px solid var(--accent);
+    }
+
+    .comp-info-main {
+      flex-grow: 1;
+    }
+
+    .comp-name {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .comp-status {
+      font-size: 0.7rem;
+      font-weight: bold;
+      color: var(--accent);
+      background: #e8f5e9;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .comp-details {
+      display: none;
+      padding: 15px;
+      border-top: 1px solid #eee;
+      background: #fafafa;
+    }
+
+    .comp-card.active .comp-details {
+      display: block;
+    }
+
+    .comp-card.active .fa-chevron-down {
+      transform: rotate(180deg);
+    }
+
+    .action-btns {
+      display: flex;
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .btn-icon {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      border-radius: 8px;
+      text-decoration: none;
+      color: white;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .btn-tel {
+      background: #3498db;
+    }
+
+    .btn-wpp {
+      background: #25d366;
+    }
+
+    .extra-section {
+      margin-top: 15px;
+      border-top: 1px dashed #ccc;
+      padding-top: 10px;
+    }
+
+    .extra-section h4 {
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      color: var(--primary);
+      text-transform: uppercase;
+    }
+
+    .list-item {
+      font-size: 0.85rem;
+      padding: 5px 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      color: #555;
+    }
+
+    .loading-small {
+      font-size: 0.75rem;
+      color: #999;
+      font-style: italic;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h2><i class="fas fa-microphone-lines"></i> Equipe de Louvor</h2>
+      <p>Apenas Componentes Ativos</p>
+    </div>
+    <div id="listaComponentes">
+      <div style="text-align:center; padding:50px;"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>
+    </div>
+  </div>
+
+  <script>
+    // SUBSTITUA PELA SUA URL DE EXPORTAÇÃO
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjwn6-sdv8f4BLLwaqQWPc4yNI8CS40gO8J77GrJDqLncENJncWIfAV-FBkZuZP6k/exec";
+
+    let bancoImagens = [];
+
+    async function iniciar() {
+      try {
+        // 1. Fotos do Drive
+        const resDrive = await fetch(SCRIPT_URL + "?action=getImages");
+        const dataDrive = await resDrive.json();
+        bancoImagens = dataDrive.data || [];
+
+        // 2. Dados dos Componentes
+        const resComp = await fetch(SCRIPT_URL + "?sheet=Componentes");
+        const dataComp = await resComp.json();
+
+        // FILTRO: Somente Ativo: "SIM"
+        const ativos = dataComp.data.filter(c => c.Ativo && c.Ativo.toString().toUpperCase().trim() === "SIM");
+        renderizar(ativos);
+      } catch (e) {
+        document.getElementById('listaComponentes').innerHTML = "Erro ao conectar. Verifique a URL do Script.";
+      }
+    }
+
+    function renderizar(lista) {
+      const container = document.getElementById('listaComponentes');
+      container.innerHTML = '';
+
+      lista.forEach(item => {
+        const nomeLimpo = item.Nome.trim();
+        const idHTML = nomeLimpo.replace(/\s/g, '');
+
+        // Busca Foto
+        const nomeArquivo = item.Foto.split('/').pop();
+        const fotoObj = bancoImagens.find(img => img.nome === nomeArquivo);
+        const urlFoto = fotoObj ? fotoObj.url : "https://via.placeholder.com/150?text=Foto";
+
+        const card = document.createElement('div');
+        card.className = 'comp-card';
+        card.innerHTML = `
+        <div class="comp-header" onclick="this.parentElement.classList.toggle('active')">
+          <img src="${urlFoto}" class="avatar">
+          <div class="comp-info-main">
+            <div class="comp-name">${nomeLimpo}</div>
+            <span class="comp-status">ATIVO</span>
+          </div>
+          <i class="fas fa-chevron-down" style="color:#ccc"></i>
+        </div>
+        
+        <div class="comp-details">
+          <div style="font-size:0.8rem; color:#666"><i class="fas fa-tag"></i> ${item.Função}</div>
+          
+          <div class="action-btns">
+            <a href="tel:${item["Tel sem Espaço"]}" class="btn-icon btn-tel"><i class="fas fa-phone"></i> Ligar</a>
+            <a href="${item.Whatsapp.link}" target="_blank" class="btn-icon btn-wpp"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+          </div>
+
+          <div class="extra-section">
+            <h4><i class="fas fa-calendar-check"></i> Próximas Escalas</h4>
+            <div id="esc-${idHTML}" class="loading-small">Buscando em Transformar...</div>
+          </div>
+
+          <div class="extra-section">
+            <h4><i class="fas fa-music"></i> Últimas Músicas (Tom)</h4>
+            <div id="hist-${idHTML}" class="loading-small">Verificando função...</div>
+          </div>
+        </div>
+      `;
+        container.appendChild(card);
+
+        // Dispara as buscas secundárias
+        buscarEscalas(nomeLimpo, idHTML);
+        buscarHistorico(nomeLimpo, idHTML, item.Função);
+      });
+    }
+
+    async function buscarEscalas(nome, id) {
+      const box = document.getElementById(`esc-${id}`);
+
+      // Mapeamento de Ícones conforme solicitado
+      const iconsMap = {
+        "Ministro": "fa-microphone-lines",
+        "Back": "fa-microphone",
+        "Violão": "fa-guitar",
+        "Guitarra": "fa-guitar-electric",
+        "Teclado": "fa-keyboard",
+        "Bateria": "fa-drum",
+        "Baixo": "fa-drum-steelpan"
+      };
+
+      try {
+        const res = await fetch(SCRIPT_URL + "?sheet=Transformar");
+        const json = await res.json();
+
+        // 1. Filtra as escalas da pessoa
+        const escalasPessoa = json.data.filter(e =>
+          e.Nome && e.Nome.trim().toLowerCase() === nome.trim().toLowerCase()
+        );
+
+        if (escalasPessoa.length > 0) {
+          // 2. Agrupa por Culto e Data para não repetir linhas do mesmo dia
+          const agrupado = {};
+          escalasPessoa.forEach(e => {
+            const chave = (e["Nome dos Cultos"] || 'Culto') + (e.Data || '');
+            if (!agrupado[chave]) {
+              agrupado[chave] = {
+                nomeCulto: e["Nome dos Cultos"] || 'Culto',
+                dataRaw: e.Data,
+                funcoes: []
+              };
+            }
+            if (e.Função) agrupado[chave].funcoes.push(e.Função.trim());
+          });
+
+          // 3. Transforma em Array e pega as 3 mais recentes/próximas
+          const listaAgrupada = Object.values(agrupado).slice(0, 3);
+
+          box.innerHTML = listaAgrupada.map(e => {
+            // Formatação da Data (DD/MM)
+            let dataFormatada = "---";
+            if (e.dataRaw) {
+              const d = new Date(e.dataRaw);
+              dataFormatada = ("0" + d.getUTCDate()).slice(-2) + "/" + ("0" + (d.getUTCMonth() + 1)).slice(-2);
+            }
+
+            // Gera os ícones das funções
+            const funcoesHtml = e.funcoes.map(f => {
+              const iconClass = iconsMap[f] || "fa-music"; // Ícone padrão caso não encontre no mapa
+              return `<span><i class="fa-solid ${iconClass}" style="font-size:0.7rem"></i> ${f}</span>`;
+            }).join(' <span style="color:#ccc">|</span> ');
+
+            return `
+          <div class="list-item" style="flex-direction: column; align-items: flex-start; gap: 4px; padding: 8px 0;">
+            <div style="display: flex; justify-content: space-between; width: 100%; font-weight: 600; color: #2c3e50;">
+              <span><i class="far fa-calendar-check" style="color:#3498db"></i> ${dataFormatada}</span>
+              <span style="font-size: 0.8rem;"><i class="fas fa-church" style="color:#95a5a6"></i> ${e.nomeCulto}</span>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; color: #7f8c8d; font-size: 0.75rem; padding-left: 2px;">
+              ${funcoesHtml}
+            </div>
+          </div>
+        `;
+          }).join('');
+        } else {
+          box.innerHTML = '<div class="loading-small">Nenhuma escala encontrada.</div>';
+        }
+      } catch (e) {
+        console.error("Erro ao buscar escalas:", e);
+        box.innerHTML = '<div class="loading-small">Erro ao carregar escalas.</div>';
+      }
+    }
+
+
+
+    async function buscarHistorico(nome, id, funcao) {
+      const box = document.getElementById(`hist-${id}`);
+      const f = funcao.toUpperCase();
+
+      // REGRA: Apenas Ministro ou Back
+      if (!f.includes("MINISTRO") && !f.includes("BACK")) {
+        box.innerHTML = "Histórico disponível para vocal.";
+        return;
+      }
+
+      try {
+        const res = await fetch(SCRIPT_URL + "?sheet=Historico%20de%20Músicas");
+        const json = await res.json();
+        const historico = json.data.filter(h => h.Cantor && h.Cantor.trim() === nome).reverse().slice(0, 3);
+
+        box.innerHTML = historico.length > 0 ?
+          historico.map(h => `<div class="list-item"><span>${h.Música || h.Músicas}</span><span>(${h.Tom || h.Tons || '--'})</span></div>`).join('') :
+          "Sem histórico.";
+      } catch (e) { box.innerHTML = "Erro ao carregar histórico."; }
+    }
+
+    window.onload = iniciar;
+  </script>
+
+</body>
+
+</html>

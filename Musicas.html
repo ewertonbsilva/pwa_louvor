@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --accent: #e67e22;
+      --bg: #fdfdfd;
+      --yt: #ff0000;
+      --sp: #1db954;
+      --cf: #f1c40f;
+      --lt: #3498db;
+      --danger: #e74c3c;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Pesquisa Fixa */
+    .search-outer {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: #fff;
+      padding: 15px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    #searchInput {
+      width: 100%;
+      max-width: 600px;
+      display: block;
+      margin: 0 auto;
+      padding: 12px 20px;
+      border-radius: 50px;
+      border: 2px solid #dfe6e9;
+      outline: none;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+
+    /* Acordeão de Temas */
+    .tema-section {
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tema-header {
+      background: var(--primary);
+      color: white;
+      padding: 15px 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .tema-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease-out;
+      background: white;
+    }
+
+    /* Acordeão de Estilos */
+    .estilo-section {
+      border-bottom: 1px solid #eee;
+    }
+
+    .estilo-header {
+      padding: 12px 30px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f9f9f9;
+      color: var(--accent);
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+    }
+
+    .estilo-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+
+    /* Grid de Músicas */
+    .music-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 15px;
+      padding: 15px 30px;
+    }
+
+    .music-card {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .music-info h3 {
+      margin: 0;
+      font-size: 1rem;
+      color: #333;
+      padding-right: 25px;
+    }
+
+    .music-info p {
+      margin: 5px 0 12px 0;
+      color: #7f8c8d;
+      font-size: 0.8rem;
+    }
+
+    /* Botão de Excluir Música da Biblioteca */
+    .btn-del-lib {
+      position: absolute;
+      right: 10px;
+      top: 12px;
+      background: none;
+      border: none;
+      color: #ddd;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .btn-del-lib:hover {
+      color: var(--danger);
+    }
+
+    /* Botões de Ação */
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+
+    .btn {
+      text-align: center;
+      padding: 6px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-size: 0.7rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: white;
+    }
+
+    .btn-yt {
+      background: var(--yt);
+    }
+
+    .btn-sp {
+      background: var(--sp);
+    }
+
+    .btn-cf {
+      background: var(--cf);
+      color: #333;
+    }
+
+    .btn-lt {
+      background: var(--lt);
+    }
+
+    /* Classes de Controle */
+    .open>.tema-content,
+    .open>.estilo-content {
+      max-height: 5000px;
+      transition: max-height 1s ease-in;
+    }
+
+    .open>.tema-header .arrow,
+    .open>.estilo-header .arrow {
+      transform: rotate(180deg);
+    }
+
+    .arrow {
+      transition: transform 0.3s;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 50px;
+      color: #999;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="search-outer">
+    <input type="text" id="searchInput" placeholder="Pesquisar música ou artista..." onkeyup="filterMusics()">
+  </div>
+
+  <div id="loader" class="loading"><i class="fas fa-list-ul fa-spin"></i> Organizando por Tema e Estilo...</div>
+  <div id="main-content" class="container"></div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjwn6-sdv8f4BLLwaqQWPc4yNI8CS40gO8J77GrJDqLncENJncWIfAV-FBkZuZP6k/exec";
+    const urlGet = SCRIPT_URL + "?sheet=Musicas";
+
+    async function loadData() {
+      try {
+        const response = await fetch(urlGet);
+        const json = await response.json();
+        document.getElementById('loader').style.display = 'none';
+        renderAccordion(json.data);
+      } catch (e) {
+        document.getElementById('loader').innerText = "Erro ao conectar.";
+      }
+    }
+
+    function renderAccordion(data) {
+      const container = document.getElementById('main-content');
+      container.innerHTML = '';
+
+      const grouped = data.reduce((acc, m) => {
+        const t = m.Tema || "Geral";
+        const e = m.Estilo || "Outros";
+        if (!acc[t]) acc[t] = {};
+        if (!acc[t][e]) acc[t][e] = [];
+        acc[t][e].push(m);
+        return acc;
+      }, {});
+
+      for (const tema in grouped) {
+        const temaSection = document.createElement('div');
+        temaSection.className = 'tema-section';
+        temaSection.innerHTML = `
+        <div class="tema-header" onclick="toggle(this.parentElement)">
+          <span><i class="fas fa-folder"></i> ${tema}</span>
+          <i class="fas fa-chevron-down arrow"></i>
+        </div>
+        <div class="tema-content"></div>
+      `;
+
+        const temaContent = temaSection.querySelector('.tema-content');
+
+        for (const estilo in grouped[tema]) {
+          const estiloSection = document.createElement('div');
+          estiloSection.className = 'estilo-section';
+          estiloSection.innerHTML = `
+          <div class="estilo-header" onclick="toggle(this.parentElement)">
+            <span>${estilo}</span>
+            <i class="fas fa-chevron-down arrow"></i>
+          </div>
+          <div class="estilo-content">
+            <div class="music-grid"></div>
+          </div>
+        `;
+
+          const grid = estiloSection.querySelector('.music-grid');
+
+          grouped[tema][estilo].forEach(m => {
+            // GERAÇÃO AUTOMÁTICA DOS LINKS DE BUSCA
+            const query = encodeURIComponent(`${m.Músicas} ${m.Cantor}`);
+            const linkYT = `https://www.youtube.com/results?search_query=${query}`;
+            const linkCF = `https://www.cifraclub.com.br/?q=${query}`;
+            const linkSP = `https://open.spotify.com/search/${query}`;
+            const linkLT = `https://www.letras.mus.br/?q=${query}`;
+
+            const card = document.createElement('div');
+            card.className = 'music-card';
+            card.setAttribute('data-search', `${m.Músicas} ${m.Cantor}`.toLowerCase());
+            card.innerHTML = `
+            <button class="btn-del-lib" onclick="excluirDaBiblioteca('${m.Músicas}', '${m.Cantor}')" title="Excluir">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+            <div class="music-info">
+              <h3>${m.Músicas}</h3>
+              <p><i class="fas fa-microphone"></i> ${m.Cantor}</p>
+            </div>
+            <div class="actions">
+              <a href="${linkYT}" target="_blank" class="btn btn-yt"><i class="fab fa-youtube"></i> Video</a>
+              <a href="${linkCF}" target="_blank" class="btn btn-cf"><i class="fas fa-guitar"></i> Cifra</a>
+              <a href="${linkSP}" target="_blank" class="btn btn-sp"><i class="fab fa-spotify"></i> Play</a>
+              <a href="${linkLT}" target="_blank" class="btn btn-lt"><i class="fas fa-align-left"></i> Letra</a>
+            </div>
+          `;
+            grid.appendChild(card);
+          });
+          temaContent.appendChild(estiloSection);
+        }
+        container.appendChild(temaSection);
+      }
+    }
+
+    async function excluirDaBiblioteca(musica, cantor) {
+      if (!confirm(`Deseja remover "${musica}" da biblioteca permanentemente?`)) return;
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: "delete", sheet: "Musicas", musica: musica, cantor: cantor })
+        });
+        const res = await response.json();
+        if (res.status === "success") { alert("Música removida!"); loadData(); }
+      } catch (e) { setTimeout(() => loadData(), 1500); }
+    }
+
+    function toggle(el) { el.classList.toggle('open'); }
+
+    function filterMusics() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const cards = document.querySelectorAll('.music-card');
+      const sections = document.querySelectorAll('.tema-section, .estilo-section');
+
+      if (q === "") {
+        sections.forEach(s => { s.classList.remove('open', 'hidden'); });
+        cards.forEach(c => c.classList.remove('hidden'));
+        return;
+      }
+
+      cards.forEach(card => {
+        const match = card.getAttribute('data-search').includes(q);
+        card.classList.toggle('hidden', !match);
+      });
+
+      document.querySelectorAll('.estilo-section').forEach(es => {
+        const hasVisible = es.querySelectorAll('.music-card:not(.hidden)').length > 0;
+        es.classList.toggle('hidden', !hasVisible);
+        if (hasVisible) es.classList.add('open');
+      });
+
+      document.querySelectorAll('.tema-section').forEach(ts => {
+        const hasVisible = ts.querySelectorAll('.estilo-section:not(.hidden)').length > 0;
+        ts.classList.toggle('hidden', !hasVisible);
+        if (hasVisible) ts.classList.add('open');
+      });
+    }
+
+    window.onload = loadData;
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão de Repertório</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --accent: #27ae60;
+      --bg: #f4f7f6;
+      --danger: #e74c3c;
+      --history: #3498db;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* Cabeçalho igual ao anterior */
+    .header-main {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header-main h2 {
+      color: var(--primary);
+      font-size: 1.8rem;
+      margin-bottom: 5px;
+    }
+
+    .header-main p {
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    /* Estilo do Grupo (Culto) */
+    .culto-group {
+      margin-bottom: 15px;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .culto-header {
+      background: var(--primary);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .culto-header:hover {
+      background: #34495e;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-grow: 1;
+    }
+
+    .header-left h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .data-badge {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+    }
+
+    /* Controles da Direita (Botão + Seta) */
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .btn-add-all {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: bold;
+      transition: 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-add-all:hover {
+      background: #219150;
+      transform: scale(1.05);
+    }
+
+    .arrow-icon {
+      transition: 0.3s;
+      font-size: 0.9rem;
+    }
+
+    /* Accordion Control */
+    .culto-body {
+      display: none;
+      padding: 5px 0;
+    }
+
+    .culto-group.active .culto-body {
+      display: block;
+    }
+
+    .culto-group.active .arrow-icon {
+      transform: rotate(180deg);
+    }
+
+    /* Estilo da Música */
+    .musica-item {
+      display: grid;
+      grid-template-columns: 2fr 0.8fr 1.5fr 80px;
+      padding: 12px 20px;
+      border-bottom: 1px solid #eee;
+      align-items: center;
+    }
+
+    .musica-item:last-child {
+      border-bottom: none;
+    }
+
+    .m-nome {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .m-tom span {
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 0.8rem;
+    }
+
+    .m-cantor {
+      color: #666;
+      font-size: 0.85rem;
+      padding-left: 10px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 15px;
+      justify-content: flex-end;
+    }
+
+    .btn-action {
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s;
+      font-size: 1.1rem;
+      padding: 5px;
+      color: #ccc;
+    }
+
+    .btn-history:hover {
+      color: var(--history);
+    }
+
+    .btn-delete:hover {
+      color: var(--danger);
+    }
+
+    .btn-history.saved {
+      color: var(--accent) !important;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 50px;
+      font-size: 1.2rem;
+      color: #666;
+    }
+
+    @media (max-width: 600px) {
+      .musica-item {
+        grid-template-columns: 1fr 0.5fr 1fr 70px;
+        padding: 10px;
+        font-size: 0.8rem;
+      }
+
+      .btn-add-all span {
+        display: none;
+      }
+
+      /* Esconde texto no mobile, deixa só ícone */
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="header-main">
+      <h2><i class="fas fa-list-ul"></i> Cronograma de Louvor</h2>
+      <p>Clique no culto para expandir</p>
+    </div>
+
+    <div id="repertorioAgrupado">
+      <div class="loading"><i class="fas fa-spinner fa-spin"></i> Carregando escalas...</div>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjwn6-sdv8f4BLLwaqQWPc4yNI8CS40gO8J77GrJDqLncENJncWIfAV-FBkZuZP6k/exec"; // Certifique-se de usar sua URL atual
+
+    async function carregarRepertorio() {
+      try {
+        const response = await fetch(SCRIPT_URL + "?sheet=Repertório");
+        const json = await response.json();
+        const container = document.getElementById('repertorioAgrupado');
+
+        if (!json.data || json.data.length === 0) {
+          container.innerHTML = '<div class="loading">Nenhum repertório encontrado.</div>';
+          return;
+        }
+
+        const dadosOrdenados = json.data.sort((a, b) => new Date(b.Data) - new Date(a.Data));
+        const grupos = {};
+        dadosOrdenados.forEach(item => {
+          const chave = item["Culto+Data"];
+          if (!grupos[chave]) {
+            grupos[chave] = { nome: item.Culto, dataFull: item.Data, musicas: [] };
+          }
+          grupos[chave].musicas.push(item);
+        });
+
+        container.innerHTML = '';
+
+        for (let chave in grupos) {
+          const grupo = grupos[chave];
+          const d = new Date(grupo.dataFull);
+          const dataFmt = ("0" + d.getUTCDate()).slice(-2) + "/" + ("0" + (d.getUTCMonth() + 1)).slice(-2) + "/" + d.getUTCFullYear();
+
+          const section = document.createElement('div');
+          section.className = 'culto-group';
+
+          // Forma segura de armazenar os dados para o botão Add All
+          section.dataset.musicas = JSON.stringify(grupo.musicas.map(m => ({
+            musica: m.Músicas, cantor: m.Cantor, tom: m.Tons
+          })));
+
+          section.innerHTML = `
+          <div class="culto-header">
+            <div class="header-left" onclick="toggleAccordion(this)">
+              <span class="data-badge">${dataFmt}</span>
+              <h3>${grupo.nome}</h3>
+            </div>
+            <div class="header-right">
+              <button class="btn-add-all" onclick="processarBulk(this)">
+                <i class="fas fa-plus-circle"></i> <span>Add Histórico</span>
+              </button>
+              <i class="fas fa-chevron-down arrow-icon" onclick="toggleAccordion(this)"></i>
+            </div>
+          </div>
+          <div class="culto-body">
+            ${grupo.musicas.map(m => `
+              <div class="musica-item">
+                <div class="m-nome">${m.Músicas}</div>
+                <div class="m-tom"><span>${m.Tons || '--'}</span></div>
+                <div class="m-cantor"><i class="fas fa-user"></i> ${m.Cantor}</div>
+                <div class="actions">
+                  <button class="btn-action btn-history" onclick="addHistorico(this, '${m.Músicas.replace(/'/g, "\\'")}', '${m.Cantor.replace(/'/g, "\\'")}', '${m.Tons}')">
+                    <i class="fas fa-bookmark"></i>
+                  </button>
+                  <button class="btn-action btn-delete" onclick="excluir('${m.Músicas.replace(/'/g, "\\'")}', '${chave}', '${m.Cantor.replace(/'/g, "\\'")}')">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+          container.appendChild(section);
+        }
+      } catch (e) {
+        console.error(e);
+        document.getElementById('repertorioAgrupado').innerHTML = '<div class="loading">Erro ao carregar dados.</div>';
+      }
+    }
+
+    // Nova função para o botão Add All ler os dados do dataset
+    function processarBulk(btn) {
+      const section = btn.closest('.culto-group');
+      const musicas = section.dataset.musicas;
+      addBulkHistorico(btn, musicas);
+    }
+    function toggleAccordion(el) {
+      el.closest('.culto-group').classList.toggle('active');
+    }
+
+    async function addHistorico(btn, musica, cantor, tom) {
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: "addHistory", musica, cantor, tom })
+        });
+        const dados = await res.json();
+        if (dados.status === "success") {
+          btn.innerHTML = '<i class="fas fa-check"></i>';
+          btn.classList.add('saved');
+        } else {
+          alert(dados.message);
+          btn.innerHTML = '<i class="fas fa-bookmark"></i>';
+        }
+      } catch (e) { btn.innerHTML = '<i class="fas fa-bookmark"></i>'; }
+    }
+
+    async function addBulkHistorico(btn, jsonStr) {
+      if (!confirm("Adicionar todas as músicas deste culto ao histórico? (Duplicatas serão ignoradas)")) return;
+      const lista = JSON.parse(jsonStr);
+      const original = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: "addHistory", data: lista })
+        });
+        const dados = await res.json();
+        alert(dados.message);
+      } catch (e) { alert("Erro na conexão."); }
+
+      btn.innerHTML = original;
+      btn.disabled = false;
+    }
+
+    async function excluir(musica, culto, cantor) {
+      if (!confirm("Excluir?")) return;
+      await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "delete", sheet: "Repertório", musica, culto, cantor }) });
+      carregarRepertorio();
+    }
+
+    window.onload = carregarRepertorio;
+  </script>
+
+</body>
+
+</html>

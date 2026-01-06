@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --accent: #16a085;
+      /* Cor verde petróleo para o Histórico */
+      --bg: #f8f9fa;
+      --text: #333;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Pesquisa Fixa */
+    .search-outer {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: #fff;
+      padding: 15px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    #searchInput {
+      width: 100%;
+      max-width: 600px;
+      display: block;
+      margin: 0 auto;
+      padding: 12px 20px;
+      border-radius: 50px;
+      border: 2px solid #dfe6e9;
+      outline: none;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+
+    /* Cabeçalho do Cantor (Acordeão) */
+    .cantor-section {
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      overflow: hidden;
+      background: white;
+      transition: 0.3s;
+    }
+
+    .cantor-header {
+      background: var(--primary);
+      color: white;
+      padding: 15px 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cantor-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .cantor-header .count {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+    }
+
+    /* Conteúdo (Lista de Músicas) */
+    .cantor-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease-out;
+    }
+
+    .music-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .music-item {
+      padding: 12px 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
+    }
+
+    .music-item:hover {
+      background: #fdfdfd;
+    }
+
+    .music-item:last-child {
+      border-bottom: none;
+    }
+
+    .music-name {
+      font-weight: 500;
+      color: #2c3e50;
+      font-size: 0.95rem;
+    }
+
+    .music-ton {
+      background: #e8f6f3;
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.8rem;
+      border: 1px solid #d1f2eb;
+      white-space: nowrap;
+    }
+
+    /* Estado Aberto */
+    .open>.cantor-content {
+      max-height: 2000px;
+    }
+
+    .open>.cantor-header .arrow {
+      transform: rotate(180deg);
+    }
+
+    .arrow {
+      transition: transform 0.3s;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 50px;
+      color: #999;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="search-outer">
+    <input type="text" id="searchInput" placeholder="Pesquisar por cantor ou música..." onkeyup="filterHistory()">
+  </div>
+
+  <div id="loader" class="loading"><i class="fas fa-history fa-spin"></i> Carregando histórico de músicas...</div>
+  <div id="main-content" class="container"></div>
+
+  <script>
+    const url = "https://script.google.com/macros/s/AKfycbwjwn6-sdv8f4BLLwaqQWPc4yNI8CS40gO8J77GrJDqLncENJncWIfAV-FBkZuZP6k/exec?sheet=Historico%20de%20Músicas";
+
+    async function loadData() {
+      try {
+        const response = await fetch(url);
+        const json = await response.json();
+        document.getElementById('loader').style.display = 'none';
+        renderHistory(json.data);
+      } catch (e) {
+        document.getElementById('loader').innerText = "Erro ao carregar histórico.";
+      }
+    }
+
+    function renderHistory(data) {
+      const container = document.getElementById('main-content');
+
+      // Agrupar por Cantor
+      const grouped = data.reduce((acc, item) => {
+        const cantor = item.Cantor || "Não Informado";
+        if (!acc[cantor]) acc[cantor] = [];
+        acc[cantor].push(item);
+        return acc;
+      }, {});
+
+      // Gerar HTML
+      for (const cantor in grouped) {
+        const section = document.createElement('div');
+        section.className = 'cantor-section';
+
+        const musicas = grouped[cantor];
+
+        section.innerHTML = `
+        <div class="cantor-header" onclick="this.parentElement.classList.toggle('open')">
+          <h2>
+            <i class="fas fa-user-circle"></i> ${cantor}
+            <span class="count">${musicas.length} músicas</span>
+          </h2>
+          <i class="fas fa-chevron-down arrow"></i>
+        </div>
+        <div class="cantor-content">
+          <div class="music-list">
+            ${musicas.map(m => `
+              <div class="music-item" data-search="${cantor.toLowerCase()} ${m.Músicas.toLowerCase()}">
+                <span class="music-name">${m.Músicas}</span>
+                <span class="music-ton">${m.Tons || '--'}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+        container.appendChild(section);
+      }
+    }
+
+    function filterHistory() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const items = document.querySelectorAll('.music-item');
+      const sections = document.querySelectorAll('.cantor-section');
+
+      if (q === "") {
+        sections.forEach(s => { s.classList.remove('open', 'hidden'); });
+        items.forEach(i => i.classList.remove('hidden'));
+        return;
+      }
+
+      items.forEach(item => {
+        const text = item.getAttribute('data-search');
+        item.classList.toggle('hidden', !text.includes(q));
+      });
+
+      sections.forEach(section => {
+        const visibleItems = section.querySelectorAll('.music-item:not(.hidden)');
+        if (visibleItems.length > 0) {
+          section.classList.remove('hidden');
+          section.classList.add('open');
+        } else {
+          section.classList.add('hidden');
+        }
+      });
+    }
+
+    loadData();
+  </script>
+
+</body>
+
+</html>

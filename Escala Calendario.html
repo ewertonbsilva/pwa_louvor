@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendário de Escalas Pro</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --accent: #3498db;
+      --bg: #f4f7f6;
+      --today: #e74c3c;
+      --has-event: #d5eaf9;
+      --highlight: #2ecc71;
+      --music-bg: #fdf2e9;
+      --music-text: #e67e22;
+      --yt: #ff0000;
+      --sp: #1db954;
+      --cf: #f1c40f;
+      --lt: #3498db;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      padding: 15px;
+    }
+
+    .calendar-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      padding: 15px;
+    }
+
+    .search-box {
+      max-width: 900px;
+      margin: 0 auto 10px;
+      position: relative;
+    }
+
+    #personSearch {
+      width: 100%;
+      padding: 12px 45px;
+      border-radius: 25px;
+      border: 2px solid #ddd;
+      outline: none;
+      font-size: 1rem;
+      box-sizing: border-box;
+      transition: 0.3s;
+    }
+
+    #personSearch:focus {
+      border-color: var(--accent);
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 18px;
+      top: 14px;
+      color: #95a5a6;
+    }
+
+    /* Botão de Adicionar Tudo */
+    #addAllContainer {
+      text-align: center;
+      margin-bottom: 15px;
+      display: none;
+    }
+
+    .btn-bulk {
+      background: var(--highlight);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
+    }
+
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .cal-header h2 {
+      margin: 0;
+      color: var(--primary);
+      text-transform: capitalize;
+      font-size: 1.2rem;
+    }
+
+    .btn-nav {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+
+    .day-name {
+      text-align: center;
+      font-weight: bold;
+      color: #95a5a6;
+      padding: 5px 0;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+    }
+
+    .day {
+      min-height: 85px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 5px;
+      transition: 0.3s;
+      cursor: pointer;
+      position: relative;
+      background: #fafafa;
+    }
+
+    .day.today {
+      border: 2px solid var(--today);
+    }
+
+    .day.has-event {
+      background: var(--has-event);
+    }
+
+    .day.match-person {
+      background: var(--highlight) !important;
+      border-color: #27ae60;
+      transform: scale(1.02);
+      z-index: 2;
+    }
+
+    .day.match-person .day-number {
+      color: white;
+    }
+
+    .day-number {
+      font-weight: bold;
+      color: #7f8c8d;
+      font-size: 0.9rem;
+    }
+
+    .event-preview {
+      font-size: 0.6rem;
+      color: var(--primary);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 4px;
+    }
+
+    .event-name {
+      background: rgba(255, 255, 255, 0.7);
+      padding: 1px 3px;
+      border-radius: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* MODAL */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+      background: white;
+      margin: 5% auto;
+      padding: 20px;
+      border-radius: 15px;
+      max-width: 500px;
+      width: 95%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .close-modal {
+      position: absolute;
+      right: 15px;
+      top: 15px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #999;
+    }
+
+    .culto-detalhe {
+      border: 1px solid #eee;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .culto-header {
+      background: var(--primary);
+      color: white;
+      padding: 12px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .culto-body {
+      padding: 15px;
+      display: none;
+      background: #fff;
+    }
+
+    .culto-body.active {
+      display: block;
+    }
+
+    .btn-gcal {
+      background: #4285f4;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.75rem;
+      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+
+    .section-title {
+      font-size: 0.7rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #95a5a6;
+      margin-bottom: 8px;
+      display: block;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 3px;
+    }
+
+    .member-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 0.85rem;
+      border-bottom: 1px solid #f9f9f9;
+    }
+
+    .musica-item {
+      background: var(--music-bg);
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border-left: 4px solid var(--music-text);
+    }
+
+    .m-footer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .m-tom {
+      font-weight: bold;
+      color: #2c3e50;
+      font-size: 0.75rem;
+      background: #fff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #eee;
+    }
+
+    .m-links {
+      display: flex;
+      gap: 12px;
+      font-size: 1.1rem;
+    }
+
+    @media (max-width: 600px) {
+      .day {
+        min-height: 70px;
+      }
+
+      .event-preview {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="search-box">
+    <i class="fas fa-search"></i>
+    <input type="text" id="personSearch" placeholder="Digite seu nome..." onkeyup="renderCalendar()">
+  </div>
+
+  <div id="addAllContainer">
+    <button class="btn-bulk" onclick="downloadICS()">
+      <i class="fas fa-file-export"></i> Adicionar Tudo na Agenda (.ics)
+    </button>
+  </div>
+
+  <div class="calendar-container">
+    <div class="cal-header">
+      <button class="btn-nav" onclick="changeMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+      <h2 id="currentMonth">Mês Ano</h2>
+      <button class="btn-nav" onclick="changeMonth(1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+  </div>
+
+  <div id="eventModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal()">×</span>
+      <h3 id="modalDate" style="color: var(--primary); margin-top: 0;">Data</h3>
+      <div id="modalDetails"></div>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjwn6-sdv8f4BLLwaqQWPc4yNI8CS40gO8J77GrJDqLncENJncWIfAV-FBkZuZP6k/exec";
+
+    let currentViewDate = new Date();
+    let globalEscalas = [];
+    let globalRepertorio = {};
+
+    const iconsMap = {
+      "Ministro": "fa-microphone-lines", "Back": "fa-microphone", "Violão": "fa-guitar",
+      "Guitarra": "fa-guitar-electric", "Teclado": "fa-keyboard", "Bateria": "fa-drum",
+      "Baixo": "fa-drum-steelpan"
+    };
+
+    function obterHorario(nomeCulto, dataStr) {
+      const data = new Date(dataStr + "T12:00:00");
+      const dia = data.getDay(); // 0 Dom, 1 Seg...
+      const nome = nomeCulto.toLowerCase();
+
+      if (nome.includes("idoso")) return { in: "070000", out: "090000" };
+      if (dia >= 1 && dia <= 5) return { in: "190000", out: "210000" }; // Seg a Sex
+      return { in: "173000", out: "193000" }; // Domingo e outros
+    }
+
+    async function loadData() {
+      try {
+        const [resE, resR] = await Promise.all([
+          fetch(SCRIPT_URL + "?sheet=Transformar"),
+          fetch(SCRIPT_URL + "?sheet=Repertório")
+        ]);
+        const dataE = await resE.json();
+        const dataR = await resR.json();
+        globalEscalas = dataE.data;
+        globalRepertorio = dataR.data.reduce((acc, item) => {
+          const key = item["Culto+Data"];
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(item);
+          return acc;
+        }, {});
+        renderCalendar();
+      } catch (e) { console.error(e); }
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      const monthLabel = document.getElementById('currentMonth');
+      const searchTerm = document.getElementById('personSearch').value.toLowerCase().trim();
+      const addAllBtn = document.getElementById('addAllContainer');
+
+      addAllBtn.style.display = searchTerm.length > 2 ? 'block' : 'none';
+      grid.innerHTML = '';
+      const year = currentViewDate.getFullYear();
+      const month = currentViewDate.getMonth();
+      monthLabel.innerText = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(currentViewDate);
+
+      ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].forEach(d => grid.innerHTML += `<div class="day-name">${d}</div>`);
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div></div>`;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dayEscalas = globalEscalas.filter(e => e.Data.split('T')[0] === dateStr);
+        const isMatch = searchTerm !== "" && dayEscalas.some(e => e.Nome.toLowerCase().includes(searchTerm));
+        const nomesNoDia = [...new Set(dayEscalas.map(e => e.Nome))];
+
+        const dayEl = document.createElement('div');
+        dayEl.className = `day ${dayEscalas.length > 0 ? 'has-event' : ''} ${isMatch ? 'match-person' : ''}`;
+        dayEl.onclick = () => showDetails(dateStr, dayEscalas);
+        dayEl.innerHTML = `<span class="day-number">${d}</span><div class="event-preview">${nomesNoDia.slice(0, 2).map(n => `<span class="event-name">${n}</span>`).join('')}</div>`;
+        grid.appendChild(dayEl);
+      }
+    }
+
+    function downloadICS() {
+      const searchTerm = document.getElementById('personSearch').value.toLowerCase().trim();
+      const minhas = globalEscalas.filter(e => e.Nome.toLowerCase().includes(searchTerm));
+      if (minhas.length === 0) return;
+
+      let ics = "BEGIN:VCALENDAR\nVERSION:2.0\n";
+      minhas.forEach(e => {
+        const d = e.Data.split('T')[0].replace(/-/g, '');
+        const h = obterHorario(e["Nome dos Cultos"], e.Data.split('T')[0]);
+        ics += `BEGIN:VEVENT\nSUMMARY:Escala: ${e["Nome dos Cultos"]}\nDTSTART:${d}T${h.in}\nDTEND:${d}T${h.out}\nDESCRIPTION:Função: ${e.Função}\nEND:VEVENT\n`;
+      });
+      ics += "END:VCALENDAR";
+
+      const blob = new Blob([ics], { type: 'text/calendar' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `escalas_${searchTerm}.ics`;
+      a.click();
+    }
+
+    function addToGoogle(nomeCulto, dataStr, funcoes) {
+      const d = dataStr.replace(/-/g, '');
+      const h = obterHorario(nomeCulto, dataStr);
+      const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(nomeCulto)}&dates=${d}T${h.in}/${d}T${h.out}&details=${encodeURIComponent(funcoes)}`;
+      window.open(url, '_blank');
+    }
+
+    function showDetails(dateStr, escalasDoDia) {
+      if (escalasDoDia.length === 0) return;
+      const details = document.getElementById('modalDetails');
+      const searchTerm = document.getElementById('personSearch').value.toLowerCase().trim();
+
+      const d = new Date(dateStr + "T12:00:00");
+      document.getElementById('modalDate').innerText = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+
+      const cultos = escalasDoDia.reduce((acc, item) => {
+        if (!acc[item.Cultos]) acc[item.Cultos] = { info: item, membros: [] };
+        acc[item.Cultos].membros.push(item);
+        return acc;
+      }, {});
+
+      details.innerHTML = Object.values(cultos).map(c => {
+        const musicas = globalRepertorio[c.info.Cultos] || [];
+        const minhaFuncao = c.membros.filter(m => m.Nome.toLowerCase().includes(searchTerm)).map(m => m.Função).join(', ');
+
+        const btn = (searchTerm !== "" && minhaFuncao !== "") ?
+          `<button class="btn-gcal" onclick="addToGoogle('${c.info["Nome dos Cultos"]}', '${dateStr}', '${minhaFuncao}')"><i class="fab fa-google"></i> Salvar na Agenda</button>` : '';
+
+        return `
+        <div class="culto-detalhe">
+          <div class="culto-header" onclick="this.nextElementSibling.classList.toggle('active')">
+            <span><i class="fas fa-church"></i> ${c.info["Nome dos Cultos"]}</span>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="culto-body">
+            ${btn}
+            <span class="section-title">Equipe</span>
+            ${c.membros.map(m => `
+              <div class="member-item">
+                <span><i class="fa-solid ${iconsMap[m.Função.split(',')[0].trim()] || 'fa-user'}" style="color:var(--accent)"></i> ${m.Nome}</span>
+                <span style="color:#888; font-size:11px">${m.Função}</span>
+              </div>
+            `).join('')}
+            <span class="section-title" style="margin-top:10px">Repertório</span>
+            ${musicas.map(m => `
+              <div class="musica-item">
+                <div style="font-weight:bold; font-size:0.85rem">${m.Músicas}</div>
+                <div class="m-footer"><span class="m-tom">${m.Tons || '--'}</span></div>
+              </div>
+            `).join('') || '<div style="color:#ccc; font-size:0.8rem">Sem músicas.</div>'}
+          </div>
+        </div>`;
+      }).join('');
+      document.getElementById('eventModal').style.display = 'block';
+    }
+
+    function changeMonth(s) { currentViewDate.setMonth(currentViewDate.getMonth() + s); renderCalendar(); }
+    function closeModal() { document.getElementById('eventModal').style.display = 'none'; }
+    loadData();
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galeria de Imagens - Drive</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --bg: #f4f7f6;
+      --danger: #e74c3c;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header h2 {
+      color: var(--primary);
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .image-card {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: 0.3s;
+      position: relative;
+    }
+
+    .image-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .image-container {
+      width: 100%;
+      height: 180px;
+      overflow: hidden;
+      background: #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .image-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      cursor: pointer;
+    }
+
+    .image-info {
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .image-info span {
+      font-size: 0.85rem;
+      color: #555;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+    }
+
+    .btn-del {
+      color: #ccc;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-size: 1rem;
+    }
+
+    .btn-del:hover {
+      color: var(--danger);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 50px;
+      font-size: 1.2rem;
+      color: #666;
+    }
+
+    /* Modal para ver imagem grande */
+    .modal-img {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .modal-img img {
+      max-width: 100%;
+      max-height: 100%;
+      margin: auto;
+      display: block;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: white;
+      font-size: 30px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h2><i class="fas fa-images"></i> Galeria de Partituras / Fotos</h2>
+      <p>Visualizando arquivos do Google Drive</p>
+    </div>
+
+    <div id="gallery" class="gallery-grid">
+      <div class="loading"><i class="fas fa-spinner fa-spin"></i> Acessando Drive...</div>
+    </div>
+  </div>
+
+  <div id="modalImg" class="modal-img" onclick="this.style.display='none'">
+    <span class="close-modal">&times;</span>
+    <img id="imgFull" src="">
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjwn6-sdv8f4BLLwaqQWPc4yNI8CS40gO8J77GrJDqLncENJncWIfAV-FBkZuZP6k/exec"; // <--- COLOQUE SUA URL DE IMPLANTAÇÃO AQUI
+
+    async function carregarGaleria() {
+      const gallery = document.getElementById('gallery');
+      try {
+        // Mudamos para GET e passamos o parâmetro action na URL
+        const response = await fetch(SCRIPT_URL + "?action=getImages");
+        const res = await response.json();
+
+        if (res.status === "success" && res.data.length > 0) {
+          gallery.innerHTML = res.data.map(img => `
+        <div class="image-card">
+          <div class="image-container">
+            <img src="${img.url}" onclick="verGrande('${img.url}')" onerror="this.src='https://via.placeholder.com/200?text=Erro+Link'">
+          </div>
+          <div class="image-info">
+            <span title="${img.nome}">${img.nome}</span>
+            <button class="btn-del" onclick="excluirImagem('${img.id}')"><i class="fas fa-trash-alt"></i></button>
+          </div>
+        </div>
+      `).join('');
+        } else {
+          gallery.innerHTML = '<div class="loading">Nenhuma imagem encontrada.</div>';
+        }
+      } catch (e) {
+        console.error("Erro detalhado:", e);
+        gallery.innerHTML = '<div class="loading">Erro ao conectar com o Drive. Verifique o Console (F12).</div>';
+      }
+    }
+    function verGrande(url) {
+      document.getElementById('imgFull').src = url;
+      document.getElementById('modalImg').style.display = 'flex';
+    }
+
+    async function excluirImagem(fileId) {
+      if (!confirm("Deseja mover esta imagem para a lixeira do Drive?")) return;
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: "deleteFile", fileId: fileId })
+        });
+        carregarGaleria();
+      } catch (e) { alert("Erro ao excluir."); }
+    }
+
+    window.onload = carregarGaleria;
+  </script>
+</body>
+
+</html>

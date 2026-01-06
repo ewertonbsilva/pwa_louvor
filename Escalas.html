@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Escala e Repertório</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --accent: #3498db;
+      --bg: #f4f7f6;
+      --music-bg: #fdf2e9;
+      --music-text: #e67e22;
+      --danger: #e74c3c;
+      --success: #27ae60;
+      /* Cores dos ícones */
+      --yt: #ff0000;
+      --sp: #1db954;
+      --cf: #f1c40f;
+      --lt: #3498db;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      padding: 0;
+    }
+
+    .search-container {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #fff;
+      padding: 15px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    #searchInput {
+      width: 100%;
+      max-width: 600px;
+      display: block;
+      margin: 0 auto;
+      padding: 12px 20px;
+      border: 2px solid #ddd;
+      border-radius: 30px;
+      outline: none;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+
+    .accordion-item {
+      background: #fff;
+      margin-bottom: 15px;
+      border-radius: 12px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+      border-left: 6px solid var(--accent);
+    }
+
+    .accordion-header {
+      padding: 15px 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-info h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: var(--primary);
+    }
+
+    .header-info span {
+      font-size: 0.85rem;
+      color: #7f8c8d;
+    }
+
+    /* Estilo do botão Add All integrado */
+    .btn-add-bulk {
+      background: var(--success);
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.7rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: 0.3s;
+      margin-left: 10px;
+    }
+
+    .btn-add-bulk:hover {
+      background: #219150;
+      transform: scale(1.05);
+    }
+
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease-out;
+      background: #fafafa;
+    }
+
+    .active .accordion-content {
+      max-height: 2000px;
+    }
+
+    .active .icon-arrow {
+      transform: rotate(180deg);
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: 20px;
+      border-top: 1px solid #eee;
+    }
+
+    .section-title-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      font-size: 0.8rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #95a5a6;
+    }
+
+    .member-item {
+      display: flex;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #f1f1f1;
+      font-size: 0.9rem;
+    }
+
+    .member-item i {
+      width: 25px;
+      color: var(--accent);
+    }
+
+    .member-info {
+      display: flex;
+      justify-content: space-between;
+      flex-grow: 1;
+    }
+
+    .m-funcao {
+      font-size: 0.7rem;
+      color: #999;
+    }
+
+    .musica-item {
+      background: var(--music-bg);
+      color: #5d4037;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      border-left: 4px solid var(--music-text);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .m-nome-musica {
+      font-weight: 600;
+      color: #2d3436;
+      padding-right: 30px;
+      margin-bottom: 4px;
+    }
+
+    .m-cantor {
+      font-size: 0.8rem;
+      color: #d35400;
+      font-style: italic;
+    }
+
+    .m-footer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .m-tom {
+      font-weight: bold;
+      color: #2c3e50;
+      font-size: 0.75rem;
+      background: #fff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #eee;
+    }
+
+    .m-links {
+      display: flex;
+      gap: 10px;
+      font-size: 1rem;
+    }
+
+    .m-links a {
+      text-decoration: none;
+      transition: 0.2s;
+    }
+
+    .m-links a:hover {
+      transform: scale(1.2);
+    }
+
+    .l-yt {
+      color: var(--yt);
+    }
+
+    .l-cf {
+      color: var(--cf);
+      filter: drop-shadow(0 0 1px #000);
+    }
+
+    .l-sp {
+      color: var(--sp);
+    }
+
+    .l-lt {
+      color: var(--lt);
+    }
+
+    .btn-del-musica {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      background: none;
+      border: none;
+      color: #ccc;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: 0.3s;
+    }
+
+    .btn-del-musica:hover {
+      color: var(--danger);
+    }
+
+    .icon-arrow {
+      transition: transform 0.3s;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 50px;
+      color: #888;
+    }
+
+    @media (max-width: 600px) {
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Pesquisar por nome ou culto..." onkeyup="filterEscala()">
+  </div>
+
+  <div id="loader" class="loading"><i class="fas fa-sync fa-spin"></i> Carregando Escalas...</div>
+  <div id="escala-container" class="container"></div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjwn6-sdv8f4BLLwaqQWPc4yNI8CS40gO8J77GrJDqLncENJncWIfAV-FBkZuZP6k/exec";
+    const urlEscala = SCRIPT_URL + "?sheet=Transformar";
+    const urlRepertorio = SCRIPT_URL + "?sheet=Repertório";
+
+    const iconsMap = {
+      "Ministro": "fa-microphone-lines", "Back": "fa-microphone", "Violão": "fa-guitar",
+      "Guitarra": "fa-guitar-electric", "Teclado": "fa-keyboard", "Bateria": "fa-drum", "Baixo": "fa-drum-steelpan"
+    };
+
+    async function loadAll() {
+      try {
+        const [resEscala, resRepertorio] = await Promise.all([fetch(urlEscala), fetch(urlRepertorio)]);
+        const escalaJson = await resEscala.json();
+        const repertorioJson = await resRepertorio.json();
+        document.getElementById('loader').style.display = 'none';
+        renderMaster(escalaJson.data, repertorioJson.data);
+      } catch (e) {
+        document.getElementById('loader').innerText = "Erro ao carregar dados.";
+      }
+    }
+
+    function renderMaster(escalas, musicas) {
+      const container = document.getElementById('escala-container');
+      container.innerHTML = '';
+      const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+
+      const escalaAgrupada = escalas.reduce((acc, item) => {
+        const dataItem = new Date(item.Data);
+        if (dataItem >= hoje) {
+          const key = item.Cultos;
+          if (!acc[key]) acc[key] = { info: item, membros: [] };
+          acc[key].membros.push({ nome: item.Nome, funcao: item["Função"] });
+        }
+        return acc;
+      }, {});
+
+      const repertorioAgrupado = musicas.reduce((acc, item) => {
+        const key = item["Culto+Data"];
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(item);
+        return acc;
+      }, {});
+
+      const escalasFiltradas = Object.values(escalaAgrupada).sort((a, b) => new Date(a.info.Data) - new Date(b.info.Data));
+
+      if (escalasFiltradas.length === 0) {
+        container.innerHTML = '<div class="loading">Não há cultos agendados.</div>';
+        return;
+      }
+
+      escalasFiltradas.forEach(item => {
+        const key = item.info.Cultos;
+        const dataObj = new Date(item.info.Data);
+        const dataFormatada = dataObj.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
+        const musicasDoCulto = repertorioAgrupado[key] || [];
+
+        const itemEl = document.createElement('div');
+        itemEl.className = 'accordion-item';
+        itemEl.setAttribute('data-search', (item.info["Nome dos Cultos"] + " " + item.membros.map(m => m.nome).join(" ")).toLowerCase());
+
+        // Armazena as músicas para a função Bulk
+        itemEl.dataset.musicas = JSON.stringify(musicasDoCulto.map(m => ({
+          musica: m.Músicas, cantor: m.Cantor, tom: m.Tons
+        })));
+
+        itemEl.innerHTML = `
+        <div class="accordion-header" onclick="this.parentElement.classList.toggle('active')">
+          <div class="header-info">
+            <h3>${item.info["Nome dos Cultos"]}</h3>
+            <span>📅 ${dataFormatada}</span>
+          </div>
+          <i class="fas fa-chevron-down icon-arrow"></i>
+        </div>
+        <div class="accordion-content">
+          <div class="content-grid">
+            <div>
+              <span class="section-title"><i class="fas fa-users"></i> Equipe</span>
+              ${item.membros.map(m => `
+                <div class="member-item">
+                  <i class="fas ${iconsMap[m.funcao.split(' ')[0]] || 'fa-star'}"></i>
+                  <div class="member-info">
+                    <span class="m-nome">${m.nome}</span>
+                    <span class="m-funcao">${m.funcao}</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+            <div>
+              <div class="section-title-container">
+                <span class="section-title"><i class="fas fa-music"></i> Repertório</span>
+                ${musicasDoCulto.length > 0 ? `
+                  <button class="btn-add-bulk" onclick="processarBulk(this, event)">
+                    <i class="fas fa-plus-circle"></i> Add Histórico
+                  </button>
+                ` : ''}
+              </div>
+              <div class="repertorio-list">
+                ${musicasDoCulto.length > 0 ? musicasDoCulto.map(m => {
+          const queryBusca = encodeURIComponent(`${m.Músicas}`);
+          return `
+                  <div class="musica-item">
+                    <span class="m-nome-musica">${m.Músicas}</span>
+                    <span class="m-cantor">
+                      <i class="fas fa-user-voice" style="font-size: 10px;"></i> ${m.Cantor || 'Líder não definido'}
+                    </span>
+                    <div class="m-footer">
+                      ${m.Tons ? `<span class="m-tom">${m.Tons}</span>` : '<span class="m-tom">--</span>'}
+                      <div class="m-links">
+                        <a href="https://www.youtube.com/results?search_query=${queryBusca}" target="_blank" class="l-yt" title="YouTube"><i class="fab fa-youtube"></i></a>
+                        <a href="https://www.cifraclub.com.br/?q=${queryBusca}" target="_blank" class="l-cf" title="Cifra Club"><i class="fas fa-guitar"></i></a>
+                        <a href="https://www.letras.mus.br/?q=${queryBusca}" target="_blank" class="l-lt" title="Letras.mus"><i class="fas fa-align-left"></i></a>
+                      </div>
+                    </div>
+                    <button class="btn-del-musica" onclick="excluirMusica('${m.Músicas.replace(/'/g, "\\'")}', '${key}', '${m.Cantor.replace(/'/g, "\\'")}')" title="Excluir">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </div>`;
+        }).join('') : '<span style="color:#ccc; font-size:0.85rem">Aguardando repertório...</span>'}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+        container.appendChild(itemEl);
+      });
+    }
+
+    // --- FUNÇÕES DE HISTÓRICO BULK ---
+    function processarBulk(btn, event) {
+      event.stopPropagation(); // Evita que o accordion feche ao clicar no botão
+      const item = btn.closest('.accordion-item');
+      const musicas = item.dataset.musicas;
+      addBulkHistorico(btn, musicas);
+    }
+
+    async function addBulkHistorico(btn, jsonStr) {
+      if (!confirm("Adicionar todas as músicas deste culto ao histórico? (Duplicatas serão ignoradas)")) return;
+
+      const lista = JSON.parse(jsonStr);
+      const originalContent = btn.innerHTML;
+
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: "addHistory", data: lista })
+        });
+        const dados = await res.json();
+        alert(dados.message);
+        btn.innerHTML = '<i class="fas fa-check"></i> Concluído';
+        btn.style.background = "#2c3e50";
+      } catch (e) {
+        alert("Erro na conexão.");
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+      }
+    }
+
+    async function excluirMusica(musica, cultoData, cantor) {
+      if (!confirm(`Deseja remover "${musica}"?`)) return;
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: "delete", sheet: "Repertório", musica: musica, culto: cultoData, cantor: cantor })
+        });
+        const res = await response.json();
+        if (res.status === "success") { alert("Removido!"); loadAll(); }
+      } catch (e) { setTimeout(() => loadAll(), 1500); }
+    }
+
+    function filterEscala() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      document.querySelectorAll('.accordion-item').forEach(item => {
+        item.classList.toggle('hidden', !item.getAttribute('data-search').includes(q));
+      });
+    }
+
+    loadAll();
+  </script>
+
+</body>
+
+</html>
