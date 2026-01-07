@@ -250,15 +250,21 @@
         const nomeLimpo = item.Nome.trim();
         const idHTML = nomeLimpo.replace(/\s/g, '');
 
-        const nomeArquivo = item.Foto ? item.Foto.split('/').pop() : "";
-        const fotoObj = bancoImagens.find(img => img.nome === nomeArquivo);
-        const urlFoto = fotoObj ? fotoObj.url : "https://via.placeholder.com/150?text=Foto";
+        // Lógica de Imagem Local com Fallback
+        const nomeArquivoPlanilha = item.Foto ? item.Foto.split('/').pop() : "";
+        const fotoObj = bancoImagens.find(img => img.nome === nomeArquivoPlanilha);
+        const urlFotoPlanilha = fotoObj ? fotoObj.url : "https://via.placeholder.com/150?text=Foto";
+
+        // Caminho local sugerido
+        const urlFotoLocal = `assets/equipe/${nomeLimpo}.jpg`;
 
         const card = document.createElement('div');
         card.className = 'comp-card';
         card.innerHTML = `
         <div class="comp-header" onclick="this.parentElement.classList.toggle('active')">
-          <img src="${urlFoto}" class="avatar">
+          <img src="${urlFotoLocal}" 
+               class="avatar" 
+               onerror="if(this.src.indexOf('${urlFotoPlanilha}') == -1) { this.src='${urlFotoPlanilha}'; } else { this.src='https://via.placeholder.com/150?text=Foto'; }">
           <div class="comp-info-main">
             <div class="comp-name">${nomeLimpo}</div>
             <span class="comp-status">ATIVO</span>
