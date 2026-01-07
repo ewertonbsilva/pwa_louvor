@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso a Mesa</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100vh;
+            border: none;
+            display: block;
+        }
+
+        .nav-overlay {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 10000;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .nav-overlay:hover {
+            opacity: 1;
+        }
+
+        .btn-back {
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 15px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .error-msg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-align: center;
+            font-family: sans-serif;
+            z-index: 0;
+        }
+
+        .error-msg a {
+            color: #3498db;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="nav-overlay">
+        <button class="btn-back" onclick="window.location.href='index.html'"><i class="fas fa-arrow-left"></i></button>
+    </div>
+
+    <div class="error-msg">
+        <p>Carregando Mesa de Som (10.10.10.2)...</p>
+        <p style="font-size:0.8rem; color:#aaa">Se não carregar, <a href="http://10.10.10.2" target="_blank">clique
+                aqui</a></p>
+    </div>
+
+    <!-- A permissão 'allow-same-origin' e 'allow-scripts' é necessária. 
+       Mixed Content (HTTP em HTTPS) pode bloquear isso se o PWA estiver seguro. -->
+    <iframe src="http://10.10.10.2" style="position:relative; z-index:1" allow="fullscreen"></iframe>
+
+    <script>
+        // WAKE LOCK API - Manter tela ligada
+        let wakeLock = null;
+
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake Lock ativo: Tela não desligará.');
+                } catch (err) {
+                    console.error(`Erro Wake Lock: ${err.name}, ${err.message}`);
+                }
+            } else {
+                console.log("Wake Lock não suportado neste navegador.");
+            }
+        }
+
+        // Requisitar novamente se a visibilidade mudar (ex: minimizou e voltou)
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        });
+
+        window.onload = requestWakeLock;
+    </script>
+
+</body>
+
+</html>
