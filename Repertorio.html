@@ -257,8 +257,10 @@
     </div>
   </div>
 
+  <script src="config.js"></script>
+  <script src="sync.js"></script>
   <script>
-    const SCRIPT_URL = APP_CONFIG.SCRIPT_URL; // Certifique-se de usar sua URL atual
+    const SCRIPT_URL = APP_CONFIG.SCRIPT_URL;
 
     async function carregarRepertorio(force = false) {
       const container = document.getElementById('repertorioAgrupado');
@@ -293,9 +295,15 @@
         const response = await fetch(SCRIPT_URL + "?sheet=Repertório");
         const json = await response.json();
         localStorage.setItem('offline_repertorio', JSON.stringify(json.data));
-        render(json.data);
+        // Se houver itens na fila de sincronização, não sobrepõe para não perder o otimismo da UI
+        if (SyncManager.getQueue().length === 0) {
+          render(json.data);
+        }
       } catch (e) { console.log("Silent sync failed"); }
     }
+
+    // Ouvinte para re-renderizar quando a sincronização terminar
+    window.addEventListener('syncCompleted', () => carregarRepertorio());
 
     function render(data) {
       const container = document.getElementById('repertorioAgrupado');
@@ -332,6 +340,9 @@
         section.innerHTML = `
           <div class="culto-header">
             <div class="header-left" onclick="toggleAccordion(this)">
+              <div class="last-update">
+                <span id="lastUpdateDate">Nunca atualizado</span> | <span id="appVersion">Versão v21</span>
+              </div>
               <span class="data-badge">${dataFmt}</span>
               <h3>${grupo.nome}</h3>
             </div>
@@ -413,9 +424,16 @@
     }
 
     async function excluir(musica, culto, cantor) {
-      if (!confirm("Excluir?")) return;
-      await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "delete", sheet: "Repertório", musica, culto, cantor }) });
-      carregarRepertorio();
+      if (!confirm("Deseja realmente excluir esta música do repertório?")) return;
+
+      const payload = { action: "delete", sheet: "Repertório", musica, culto, cantor };
+
+      // 1. Atualiza UI imediatamente (Otimismo)
+      SyncManager.updateLocalCache("Repertório", "delete", payload);
+      render(JSON.parse(localStorage.getItem('offline_repertorio')));
+
+      // 2. Adiciona à fila de sincronização
+      SyncManager.addToQueue(payload);
     }
 
     window.onload = () => carregarRepertorio();

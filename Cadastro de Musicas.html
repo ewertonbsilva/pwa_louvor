@@ -8,6 +8,7 @@
   <link rel="manifest" href="manifest.json">
   <script src="config.js"></script>
   <script src="permissions.js"></script>
+  <script src="sync.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <script>
     const userRoleToken = JSON.parse(localStorage.getItem('user_token') || '{}').Role;
@@ -250,40 +251,23 @@
       const formData = new FormData(this);
       const data = {};
 
-      // Converte FormData para Objeto JSON
       formData.forEach((value, key) => data[key] = value);
 
-      // Feedback visual de carregamento
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gravando...';
-      status.style.display = "none";
+      // 1. Atualização Otimista local
+      SyncManager.updateLocalCache("Musicas", "add", data);
 
-      fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify(data)
-      })
-        .then(response => response.json())
-        .then(res => {
-          if (res.status === "success") {
-            status.innerText = "✅ Música salva! Links gerados na planilha.";
-            status.className = "msg-success";
-            this.reset(); // Limpa o formulário
-          } else {
-            // Exibe a mensagem de erro vinda do Script (ex: Duplicata)
-            status.innerText = "⚠️ " + (res.message || "Erro ao salvar.");
-            status.className = "msg-error";
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          status.innerText = "❌ Erro de conexão ou permissão.";
-          status.className = "msg-error";
-        })
-        .finally(() => {
-          status.style.display = "block";
-          btn.disabled = false;
-          btn.innerText = "Salvar Música";
-        });
+      // 2. Adiciona na fila de sincronização
+      SyncManager.addToQueue(data);
+
+      // 3. UI Feedback
+      status.innerText = "✅ Música salva localmente!";
+      status.className = "msg-success";
+      status.style.display = "block";
+      this.reset();
+
+      if (!navigator.onLine) {
+        status.innerText = "☁️ Modo Offline: Salvo localmente. Sincronizará ao voltar conexão.";
+      }
     });
 
     // Iniciar carregamento dos temas

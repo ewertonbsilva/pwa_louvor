@@ -133,11 +133,61 @@
       white-space: nowrap;
     }
 
-    /* Estado Aberto */
-    .open>.cantor-content {
-      max-height: 2000px;
+    /* Estilos de Níveis Aninhados */
+    .tema-section,
+    .estilo-section {
+      margin-top: 10px;
+      border-left: 2px solid #eee;
+      padding-left: 10px;
     }
 
+    .tema-header,
+    .estilo-header {
+      padding: 10px;
+      background: #fdfdfd;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: 0.2s;
+    }
+
+    .tema-header:hover,
+    .estilo-header:hover {
+      background: #f5f5f5;
+    }
+
+    .tema-header h3,
+    .estilo-header h4 {
+      margin: 0;
+      font-size: 0.95rem;
+      color: #34495e;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .estilo-header h4 {
+      font-size: 0.85rem;
+      color: #7f8c8d;
+    }
+
+    .tema-content,
+    .estilo-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+
+    .open>.tema-content,
+    .open>.estilo-content,
+    .open>.cantor-content {
+      max-height: 5000px;
+    }
+
+    .open>.tema-header .arrow,
+    .open>.estilo-header .arrow,
     .open>.cantor-header .arrow {
       transform: rotate(180deg);
     }
@@ -249,69 +299,121 @@
       const container = document.getElementById('main-content');
       container.innerHTML = '';
 
-      // Agrupar por Cantor
+      // Mapear informações da biblioteca de músicas
+      const catalogRaw = localStorage.getItem('offline_musicas');
+      const catalog = catalogRaw ? JSON.parse(catalogRaw) : [];
+      const musicMap = catalog.reduce((acc, m) => {
+        const key = `${(m.Músicas || "").trim()} - ${(m.Cantor || "").trim()}`.toLowerCase();
+        acc[key] = { tema: m.Tema || "Geral", estilo: m.Estilo || "Outros" };
+        return acc;
+      }, {});
+
+      // Agrupar: Cantor -> Tema -> Estilo
       const grouped = data.reduce((acc, item) => {
         const cantor = item.Cantor || "Não Informado";
-        if (!acc[cantor]) acc[cantor] = [];
-        acc[cantor].push(item);
+        const nomeMusica = (item.Músicas || "").trim();
+        const info = musicMap[nomeMusica.toLowerCase()] || { tema: "Geral", estilo: "Outros" };
+
+        const tema = info.tema;
+        const estilo = info.estilo;
+
+        if (!acc[cantor]) acc[cantor] = {};
+        if (!acc[cantor][tema]) acc[cantor][tema] = {};
+        if (!acc[cantor][tema][estilo]) acc[cantor][tema][estilo] = [];
+
+        acc[cantor][tema][estilo].push(item);
         return acc;
       }, {});
 
       // Gerar HTML
       for (const cantor in grouped) {
-        const section = document.createElement('div');
-        section.className = 'cantor-section';
+        const sectionCantor = document.createElement('div');
+        sectionCantor.className = 'cantor-section';
 
-        const musicas = grouped[cantor];
+        let temasHtml = '';
+        const temas = grouped[cantor];
 
-        section.innerHTML = `
-        <div class="cantor-header" onclick="this.parentElement.classList.toggle('open')">
-          <h2>
-            <i class="fas fa-user-circle"></i> ${cantor}
-            <span class="count">${musicas.length} músicas</span>
-          </h2>
-          <i class="fas fa-chevron-down arrow"></i>
-        </div>
-        <div class="cantor-content">
-          <div class="music-list">
-            ${musicas.map(m => {
-          const nomeMusica = m.Músicas || "Sem Nome";
-          return `
-              <div class="music-item" data-search="${cantor.toLowerCase()} ${nomeMusica.toLowerCase()}">
-                <span class="music-name">${nomeMusica}</span>
-                <span class="music-ton">${m.Tons || '--'}</span>
+        for (const tema in temas) {
+          let estilosHtml = '';
+          const estilos = temas[tema];
+
+          for (const estilo in estilos) {
+            const musicas = estilos[estilo];
+            estilosHtml += `
+              <div class="estilo-section">
+                <div class="estilo-header" onclick="this.parentElement.classList.toggle('open')">
+                  <h4><i class="fas fa-tag"></i> ${estilo} <span class="count">${musicas.length}</span></h4>
+                  <i class="fas fa-chevron-down arrow"></i>
+                </div>
+                <div class="estilo-content">
+                  <div class="music-list">
+                    ${musicas.map(m => {
+              const nomeMusica = m.Músicas || "Sem Nome";
+              return `
+                        <div class="music-item" data-search="${cantor.toLowerCase()} ${tema.toLowerCase()} ${estilo.toLowerCase()} ${nomeMusica.toLowerCase()}">
+                          <span class="music-name">${nomeMusica}</span>
+                          <span class="music-ton">${m.Tons || '--'}</span>
+                        </div>
+                      `}).join('')}
+                  </div>
+                </div>
               </div>
-            `}).join('')}
+            `;
+          }
+
+          temasHtml += `
+            <div class="tema-section">
+              <div class="tema-header" onclick="this.parentElement.classList.toggle('open')">
+                <h3><i class="fas fa-folder"></i> ${tema}</h3>
+                <i class="fas fa-chevron-down arrow"></i>
+              </div>
+              <div class="tema-content">
+                ${estilosHtml}
+              </div>
+            </div>
+          `;
+        }
+
+        sectionCantor.innerHTML = `
+          <div class="cantor-header" onclick="this.parentElement.classList.toggle('open')">
+            <h2>
+              <i class="fas fa-user-circle"></i> ${cantor}
+            </h2>
+            <i class="fas fa-chevron-down arrow"></i>
           </div>
-        </div>
-      `;
-        container.appendChild(section);
+          <div class="cantor-content">
+            ${temasHtml}
+          </div>
+        `;
+        container.appendChild(sectionCantor);
       }
     }
 
     function filterHistory() {
       const q = document.getElementById('searchInput').value.toLowerCase();
       const items = document.querySelectorAll('.music-item');
-      const sections = document.querySelectorAll('.cantor-section');
+      const levels = document.querySelectorAll('.cantor-section, .tema-section, .estilo-section');
 
       if (q === "") {
-        sections.forEach(s => { s.classList.remove('open', 'hidden'); });
+        levels.forEach(s => { s.classList.remove('open', 'hidden'); });
         items.forEach(i => i.classList.remove('hidden'));
         return;
       }
 
+      // Primeiro oculta tudo e filtra itens
       items.forEach(item => {
         const text = item.getAttribute('data-search');
         item.classList.toggle('hidden', !text.includes(q));
       });
 
-      sections.forEach(section => {
-        const visibleItems = section.querySelectorAll('.music-item:not(.hidden)');
+      // Depois abre os níveis que contêm itens visíveis
+      levels.forEach(level => {
+        const visibleItems = level.querySelectorAll('.music-item:not(.hidden)');
         if (visibleItems.length > 0) {
-          section.classList.remove('hidden');
-          section.classList.add('open');
+          level.classList.remove('hidden');
+          level.classList.add('open');
         } else {
-          section.classList.add('hidden');
+          level.classList.add('hidden');
         }
       });
     }

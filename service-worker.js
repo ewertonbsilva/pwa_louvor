@@ -1,9 +1,10 @@
-const CACHE_NAME = 'louvor-app-v12';
+const CACHE_NAME = 'louvor-app-v21';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './config.js',
   './permissions.js',
+  './sync.js',
   './Login.html',
   './MenuEscalas.html',
   './MenuMusicas.html',

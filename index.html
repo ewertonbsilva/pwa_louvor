@@ -10,6 +10,7 @@
   <link rel="apple-touch-icon" href="assets/backgroud.png">
   <script src="config.js"></script>
   <script src="permissions.js"></script>
+  <script src="sync.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -119,11 +120,16 @@
       color: #3498db;
       padding: 8px 20px;
       border-radius: 20px;
-      margin-top: 10px;
+      margin-top: 15px;
       cursor: pointer;
       font-size: 0.8rem;
       transition: 0.3s;
-      width: 80%;
+      width: 100%;
+      /* Largura total dentro do container */
+      max-width: 300px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .btn-sync:hover {
@@ -170,11 +176,17 @@
     }
 
     /* DASHBOARD STYLES */
+    .dashboard-main {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+    }
+
     .kpi-container {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 10px;
-      margin-bottom: 20px;
       width: 100%;
     }
 
@@ -185,6 +197,10 @@
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
       text-align: center;
       border-bottom: 4px solid #3498db;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
     }
 
     .kpi-card i {
@@ -314,19 +330,74 @@
     }
 
     /* LANDSCAPE OPTIMIZATION */
-    @media (min-width: 700px) {
+    @media (min-width: 900px) {
       .container {
-        max-width: 900px;
+        max-width: 1100px;
         padding: 40px;
       }
 
+      .dashboard-main {
+        flex-direction: row;
+        align-items: stretch;
+        justify-content: space-between;
+      }
+
       .menu-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: 1fr !important;
+        flex: 0 0 180px;
+        order: 1;
+        /* Esquerda */
+        gap: 10px;
+        margin-top: 0;
+      }
+
+      .dashboard-card {
+        flex: 1;
+        margin: 0 20px;
+        order: 2;
+        /* Centro */
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .dashboard-card h2 {
+        margin-bottom: 5px !important;
+      }
+
+      .chart-wrapper {
+        flex: 1;
+        min-height: 0;
       }
 
       .kpi-container {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
+        grid-template-columns: 1fr !important;
+        flex: 0 0 130px;
+        order: 3;
+        /* Direita */
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        margin-bottom: 0;
+      }
+
+      .kpi-card {
+        padding: 10px 5px;
+        flex: 1;
+        margin-bottom: 10px;
+      }
+
+      .kpi-card:last-child {
+        margin-bottom: 0;
+      }
+
+      .btn-sync {
+        margin-top: 20px;
+        max-width: none;
+        width: calc(100% - 350px) !important;
+        /* 180 menu + 130 kpi + 40 gaps */
+        margin-left: calc(180px + 20px) !important;
+        margin-right: auto !important;
       }
     }
   </style>
@@ -348,31 +419,53 @@
     <h1>Louvor CEVD</h1>
     <div class="user-welcome">Olá, <span id="userName">...</span></div>
 
-    <!-- DASHBOARD KPIs -->
-    <div class="kpi-container">
-      <div class="kpi-card">
-        <i class="fas fa-users"></i>
-        <span class="value" id="kpi-membros">0</span>
-        <span class="label">Membros</span>
+    <div class="dashboard-main">
+      <!-- DASHBOARD KPIs -->
+      <div class="kpi-container">
+        <div class="kpi-card">
+          <i class="fas fa-users"></i>
+          <span class="value" id="kpi-membros">0</span>
+          <span class="label">Membros</span>
+        </div>
+        <div class="kpi-card" style="border-color: #e67e22;">
+          <i class="fas fa-church" style="color: #e67e22;"></i>
+          <span class="value" id="kpi-cultos">0</span>
+          <span class="label">Cultos</span>
+        </div>
+        <div class="kpi-card" style="border-color: #27ae60;">
+          <i class="fas fa-chart-line" style="color: #27ae60;"></i>
+          <span class="value" id="kpi-media">0</span>
+          <span class="label">Média</span>
+        </div>
       </div>
-      <div class="kpi-card" style="border-color: #e67e22;">
-        <i class="fas fa-church" style="color: #e67e22;"></i>
-        <span class="value" id="kpi-cultos">0</span>
-        <span class="label">Cultos</span>
-      </div>
-      <div class="kpi-card" style="border-color: #27ae60;">
-        <i class="fas fa-chart-line" style="color: #27ae60;"></i>
-        <span class="value" id="kpi-media">0</span>
-        <span class="label">Média</span>
-      </div>
-    </div>
 
-    <!-- DASHBOARD CHART -->
-    <div class="dashboard-card">
-      <h2 style="margin:0 0 15px 0; font-size: 1rem;">Distribuição de Escalas</h2>
-      <div id="dashLoader"><i class="fas fa-sync fa-spin"></i></div>
-      <div class="chart-wrapper">
-        <canvas id="escalaChart"></canvas>
+      <!-- DASHBOARD CHART -->
+      <div class="dashboard-card">
+        <h2 style="margin:0 0 15px 0; font-size: 1rem;">Distribuição de Escalas</h2>
+        <div id="dashLoader"><i class="fas fa-sync fa-spin"></i></div>
+        <div class="chart-wrapper">
+          <canvas id="escalaChart"></canvas>
+        </div>
+      </div>
+
+      <!-- MENU GRID -->
+      <div class="menu-grid" id="menuGrid">
+        <a href="MenuEscalas.html" class="menu-item">
+          <i class="fas fa-calendar-alt"></i>
+          <span>Escalas</span>
+        </a>
+        <a href="MenuMusicas.html" class="menu-item">
+          <i class="fas fa-music"></i>
+          <span>Músicas</span>
+        </a>
+        <a href="Componentes.html" class="menu-item">
+          <i class="fas fa-users"></i>
+          <span>Equipe</span>
+        </a>
+        <a href="AcessoMesa.html" class="menu-item" id="menuAcessoMesa">
+          <i class="fas fa-sliders-h" style="color: #34495e;"></i>
+          <span>Acesso a Mesa</span>
+        </a>
       </div>
     </div>
 
@@ -383,25 +476,6 @@
       <span id="progText" class="status-text">Iniciando...</span>
     </div>
 
-    <div class="menu-grid" id="menuGrid">
-      <a href="MenuEscalas.html" class="menu-item">
-        <i class="fas fa-calendar-alt"></i>
-        <span>Escalas</span>
-      </a>
-      <a href="MenuMusicas.html" class="menu-item">
-        <i class="fas fa-music"></i>
-        <span>Músicas</span>
-      </a>
-      <a href="Componentes.html" class="menu-item">
-        <i class="fas fa-users"></i>
-        <span>Equipe</span>
-      </a>
-      <a href="AcessoMesa.html" class="menu-item" id="menuAcessoMesa">
-        <i class="fas fa-sliders-h" style="color: #34495e;"></i>
-        <span>Acesso a Mesa</span>
-      </a>
-    </div>
-
 
     <button class="btn-sync" onclick="syncAllData()">
       <i class="fas fa-sync"></i> Atualizar Tudo
@@ -409,7 +483,7 @@
     <button class="btn-logout" onclick="logout()">Sair</button>
 
     <div class="last-update">
-      <span id="lastUpdateDate">Nunca atualizado</span> | <span id="appVersion">Versão v12</span>
+      <span id="lastUpdateDate">Nunca atualizado</span> | <span id="appVersion">Versão v21</span>
     </div>
   </div>
 
