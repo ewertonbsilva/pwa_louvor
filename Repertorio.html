@@ -224,6 +224,20 @@
 
       /* Esconde texto no mobile, deixa só ícone */
     }
+
+    /* LANDSCAPE OPTIMIZATION */
+    @media (min-width: 900px) {
+      #repertorioAgrupado {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        align-items: flex-start;
+      }
+
+      .container {
+        max-width: 1200px;
+      }
+    }
   </style>
 </head>
 
@@ -231,7 +245,8 @@
 
   <div class="container">
     <div class="header-main">
-      <button class="nav-btn" onclick="window.location.href='index.html'"><i class="fas fa-arrow-left"></i></button>
+      <button class="nav-btn" onclick="window.location.href='MenuMusicas.html'"><i
+          class="fas fa-arrow-left"></i></button>
       <h2><i class="fas fa-list-ul"></i> Cronograma</h2>
       <button class="nav-btn" onclick="carregarRepertorio(true)"><i class="fas fa-sync-alt"></i></button>
     </div>

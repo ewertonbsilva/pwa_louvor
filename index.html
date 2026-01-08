@@ -9,7 +9,9 @@
   <link rel="icon" type="image/png" href="assets/backgroud.png">
   <link rel="apple-touch-icon" href="assets/backgroud.png">
   <script src="config.js"></script>
+  <script src="permissions.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -162,6 +164,171 @@
       font-size: 0.75rem;
       color: #95a5a6;
     }
+
+    .hidden-permission {
+      display: none !important;
+    }
+
+    /* DASHBOARD STYLES */
+    .kpi-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+      width: 100%;
+    }
+
+    .kpi-card {
+      background: white;
+      padding: 15px 5px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      text-align: center;
+      border-bottom: 4px solid #3498db;
+    }
+
+    .kpi-card i {
+      font-size: 1.2rem;
+      color: #3498db;
+      margin-bottom: 8px;
+    }
+
+    .kpi-card .value {
+      display: block;
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .kpi-card .label {
+      font-size: 0.65rem;
+      color: #7f8c8d;
+      text-transform: uppercase;
+    }
+
+    .dashboard-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+      margin-bottom: 25px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      height: 300px;
+      width: 100%;
+    }
+
+    /* MODAL */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+      box-sizing: border-box;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      width: 100%;
+      max-width: 400px;
+      position: relative;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .close-modal {
+      position: absolute;
+      right: 15px;
+      top: 10px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #95a5a6;
+    }
+
+    .modal-header {
+      border-bottom: 2px solid #f4f7f6;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+      text-align: left;
+    }
+
+    .detail-item {
+      padding: 10px 0;
+      border-bottom: 1px solid #f9f9f9;
+      text-align: left;
+    }
+
+    .detail-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .detail-culto {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .detail-date {
+      color: #3498db;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    .detail-funcoes {
+      color: #666;
+      font-size: 0.8rem;
+      font-style: italic;
+      display: block;
+      margin-top: 3px;
+    }
+
+    @media (max-width: 400px) {
+      .kpi-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* LANDSCAPE OPTIMIZATION */
+    @media (min-width: 700px) {
+      .container {
+        max-width: 900px;
+        padding: 40px;
+      }
+
+      .menu-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .kpi-container {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+      }
+    }
   </style>
 </head>
 
@@ -181,6 +348,34 @@
     <h1>Louvor CEVD</h1>
     <div class="user-welcome">Olá, <span id="userName">...</span></div>
 
+    <!-- DASHBOARD KPIs -->
+    <div class="kpi-container">
+      <div class="kpi-card">
+        <i class="fas fa-users"></i>
+        <span class="value" id="kpi-membros">0</span>
+        <span class="label">Membros</span>
+      </div>
+      <div class="kpi-card" style="border-color: #e67e22;">
+        <i class="fas fa-church" style="color: #e67e22;"></i>
+        <span class="value" id="kpi-cultos">0</span>
+        <span class="label">Cultos</span>
+      </div>
+      <div class="kpi-card" style="border-color: #27ae60;">
+        <i class="fas fa-chart-line" style="color: #27ae60;"></i>
+        <span class="value" id="kpi-media">0</span>
+        <span class="label">Média</span>
+      </div>
+    </div>
+
+    <!-- DASHBOARD CHART -->
+    <div class="dashboard-card">
+      <h2 style="margin:0 0 15px 0; font-size: 1rem;">Distribuição de Escalas</h2>
+      <div id="dashLoader"><i class="fas fa-sync fa-spin"></i></div>
+      <div class="chart-wrapper">
+        <canvas id="escalaChart"></canvas>
+      </div>
+    </div>
+
     <div id="syncStatus" class="sync-status">
       <div class="progress-track">
         <div id="progFill" class="progress-fill"></div>
@@ -193,27 +388,20 @@
         <i class="fas fa-calendar-alt"></i>
         <span>Escalas</span>
       </a>
-      <a href="Musicas.html" class="menu-item">
+      <a href="MenuMusicas.html" class="menu-item">
         <i class="fas fa-music"></i>
         <span>Músicas</span>
-      </a>
-      <a href="Repertorio.html" class="menu-item">
-        <i class="fas fa-list"></i>
-        <span>Repertório</span>
       </a>
       <a href="Componentes.html" class="menu-item">
         <i class="fas fa-users"></i>
         <span>Equipe</span>
       </a>
-      <a href="Cadastro de Repertorio.html" class="menu-item">
-        <i class="fas fa-clipboard-list" style="color: #e67e22;"></i>
-        <span>Cad. Repertório</span>
-      </a>
-      <a href="AcessoMesa.html" class="menu-item">
+      <a href="AcessoMesa.html" class="menu-item" id="menuAcessoMesa">
         <i class="fas fa-sliders-h" style="color: #34495e;"></i>
         <span>Acesso a Mesa</span>
       </a>
     </div>
+
 
     <button class="btn-sync" onclick="syncAllData()">
       <i class="fas fa-sync"></i> Atualizar Tudo
@@ -221,9 +409,22 @@
     <button class="btn-logout" onclick="logout()">Sair</button>
 
     <div class="last-update">
-      <span id="lastUpdateDate">Nunca atualizado</span> | <span id="appVersion">Versão v10</span>
+      <span id="lastUpdateDate">Nunca atualizado</span> | <span id="appVersion">Versão v12</span>
     </div>
   </div>
+
+  <!-- MODAL DETALHES -->
+  <div id="detailModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="fecharModal()">&times;</span>
+      <div class="modal-header">
+        <h3 id="modalNome" style="margin:0; font-size: 1.1rem;">Nome do Músico</h3>
+        <small style="color: #e67e22; font-weight: bold;">Programação de Escalas</small>
+      </div>
+      <div id="modalLista"></div>
+    </div>
+  </div>
+
 
   <div id="installBanner" class="install-banner">
     <i class="fas fa-download"></i> Instalar Aplicativo
@@ -301,7 +502,7 @@
       localStorage.setItem('offline_temas', JSON.stringify((await resTemas.json()).data));
 
       progressCb(90, "Histórico...");
-      const res5 = await fetch(SCRIPT_URL + "?sheet=Historico%20de%20Músicas");
+      const res5 = await fetch(SCRIPT_URL + "?sheet=" + encodeURIComponent("Historico de Músicas"));
       localStorage.setItem('offline_historico', JSON.stringify((await res5.json()).data));
 
       progressCb(95, "Imagens...");
@@ -331,11 +532,132 @@
       }
     }
 
+    let participacoesDetalhas = {};
+
+    function initDashboard() {
+      const cached = localStorage.getItem('offline_escala');
+      if (cached) {
+        document.getElementById('dashLoader').style.display = 'none';
+        processarERenderizar(JSON.parse(cached));
+      } else {
+        document.getElementById('dashLoader').innerHTML = "Aguardando sincronização...";
+      }
+    }
+
+    function processarERenderizar(dados) {
+      const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+      const contagemMembros = {};
+      const cultosUnicosGerais = new Set();
+      participacoesDetalhas = {};
+
+      dados.forEach(item => {
+        const dataItem = new Date(item.Data);
+        if (dataItem >= hoje) {
+          const nome = item.Nome;
+          const idCulto = item.Cultos;
+          const nomeCulto = item["Nome dos Cultos"];
+          const funcao = item["Função"];
+          const dataFmt = dataItem.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+
+          cultosUnicosGerais.add(idCulto);
+
+          if (!contagemMembros[nome]) contagemMembros[nome] = new Set();
+          contagemMembros[nome].add(idCulto);
+
+          if (!participacoesDetalhas[nome]) participacoesDetalhas[nome] = {};
+          if (!participacoesDetalhas[nome][idCulto]) {
+            participacoesDetalhas[nome][idCulto] = { data: dataFmt, nomeCulto: nomeCulto, funcoes: [] };
+          }
+          if (!participacoesDetalhas[nome][idCulto].funcoes.includes(funcao)) {
+            participacoesDetalhas[nome][idCulto].funcoes.push(funcao);
+          }
+        }
+      });
+
+      const listaOrdenada = Object.keys(contagemMembros)
+        .map(nome => ({ nome, total: contagemMembros[nome].size }))
+        .sort((a, b) => b.total - a.total);
+
+      document.getElementById('kpi-membros').innerText = listaOrdenada.length;
+      document.getElementById('kpi-cultos').innerText = cultosUnicosGerais.size;
+      const media = listaOrdenada.length ? (listaOrdenada.reduce((s, v) => s + v.total, 0) / listaOrdenada.length).toFixed(1) : 0;
+      document.getElementById('kpi-media').innerText = media;
+
+      renderizarGrafico(listaOrdenada);
+    }
+
+    let currentChart = null;
+    function renderizarGrafico(lista) {
+      const labels = lista.map(d => d.nome);
+      const valores = lista.map(d => d.total);
+      const cores = labels.map((_, i) => `hsla(${200 + (i * 10)}, 70%, 50%, 0.85)`);
+
+      const ctx = document.getElementById('escalaChart').getContext('2d');
+      if (currentChart) currentChart.destroy();
+
+      currentChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{ data: valores, backgroundColor: cores, borderRadius: 5, barThickness: 15 }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: (evt, elements) => {
+            if (elements.length > 0) {
+              const index = elements[0].index;
+              abrirDetalhes(labels[index]);
+            }
+          },
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } },
+            y: { grid: { display: false }, ticks: { font: { weight: '600', size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function abrirDetalhes(nome) {
+      document.getElementById('modalNome').innerText = nome;
+      const cultosMembro = participacoesDetalhas[nome] || {};
+      const container = document.getElementById('modalLista');
+      const listaAgrupada = Object.values(cultosMembro);
+
+      container.innerHTML = listaAgrupada.map(item => `
+        <div class="detail-item">
+          <div class="detail-top">
+            <span class="detail-culto">${item.nomeCulto}</span>
+            <span class="detail-date">${item.data}</span>
+          </div>
+          <span class="detail-funcoes"><i class="fas fa-tag"></i> ${item.funcoes.join(', ')}</span>
+        </div>
+      `).join('');
+      document.getElementById('detailModal').style.display = 'flex';
+    }
+
+    function fecharModal() { document.getElementById('detailModal').style.display = 'none'; }
+
+    function applyPermissions() {
+      if (userData.Role) {
+        if (!hasPermission(userData.Role, "menuAcessoMesa", "menu")) {
+          document.getElementById('menuAcessoMesa')?.classList.add('hidden-permission');
+        }
+      }
+    }
+
+    window.onclick = (event) => {
+      if (event.target == document.getElementById('detailModal')) fecharModal();
+    }
+
     window.onload = () => {
       if (userData.Nome) document.getElementById('userName').innerText = userData.Nome.split(' ')[0];
+      applyPermissions();
       updateLastUpdateText();
       checkSession();
-      // Espera 1 segundo para rodar sync em background para não travar a UI inicial
+      initDashboard();
       setTimeout(backgroundSync, 1000);
     };
 

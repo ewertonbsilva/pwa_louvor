@@ -9,7 +9,17 @@
   <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
   <link rel="manifest" href="manifest.json">
   <script src="config.js"></script>
+  <script src="permissions.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <script>
+    const userTokens = JSON.parse(localStorage.getItem('user_token') || '{}');
+    if (userTokens.Role) {
+      if (!hasPermission(userTokens.Role, "Cadastro de Repertorio.html", "page")) {
+        alert("Acesso restrito.");
+        window.location.href = 'index.html';
+      }
+    }
+  </script>
 
   <style>
     :root {
@@ -132,7 +142,7 @@
 
   <div class="card">
     <div class="header-cad">
-      <button onclick="window.location.href='index.html'" class="btn-back" title="Voltar">
+      <button onclick="window.location.href='MenuMusicas.html'" class="btn-back" title="Voltar">
         <i class="fas fa-arrow-left"></i>
       </button>
       <h2 style="margin:0; font-size:1.1rem;"><i class="fas fa-calendar-check"></i> Montar Repertório</h2>

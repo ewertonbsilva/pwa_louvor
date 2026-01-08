@@ -293,6 +293,20 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* LANDSCAPE OPTIMIZATION */
+    @media (min-width: 800px) {
+      #escala-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        align-items: flex-start;
+      }
+
+      .container {
+        max-width: 1000px;
+      }
+    }
   </style>
 </head>
 

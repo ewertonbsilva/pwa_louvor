@@ -7,7 +7,14 @@
   <title>Cadastro de Músicas</title>
   <link rel="manifest" href="manifest.json">
   <script src="config.js"></script>
+  <script src="permissions.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <script>
+    const userRoleToken = JSON.parse(localStorage.getItem('user_token') || '{}').Role;
+    if (userRoleToken && !hasPermission(userRoleToken, "Cadastro de Musicas.html", "page")) {
+      window.location.href = 'index.html';
+    }
+  </script>
   <style>
     :root {
       --primary: #2c3e50;

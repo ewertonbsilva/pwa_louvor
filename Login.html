@@ -174,6 +174,18 @@
                 });
 
                 if (usuarioValido) {
+                    // ATRIBUIÇÃO DE PERFIS
+                    const nome = (usuarioValido.Nome || "").trim().toLowerCase();
+                    let role = "User";
+
+                    if (nome.includes("ewerton")) {
+                        role = "Admin";
+                    } else if (["jhordan", "lucas", "felipe", "jesse"].some(n => nome.includes(n))) {
+                        role = "Advanced";
+                    }
+
+                    usuarioValido.Role = role;
+
                     localStorage.setItem('user_token', JSON.stringify(usuarioValido)); // Salva sessão
                     localStorage.setItem('offline_componentes', JSON.stringify(json.data)); // Já aproveita e salva cache
                     window.location.href = 'index.html';

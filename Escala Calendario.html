@@ -21,6 +21,14 @@
       --music-text: #e67e22;
     }
 
+    @media (min-width: 800px) {
+      .calendar-container {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        max-width: 1200px !important;
+      }
+    }
+
     body {
       font-family: 'Segoe UI', sans-serif;
       background-color: var(--bg);

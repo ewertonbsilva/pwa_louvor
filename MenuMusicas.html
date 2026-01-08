@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Músicas - Louvor</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="config.js"></script>
+    <script src="permissions.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --bg: #f4f7f6;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            width: 100%;
+        }
+
+        .header h2 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 1.4rem;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            color: var(--primary);
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* CARD DO GRÁFICO */
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .chart-card h3 {
+            text-align: center;
+            margin: 0 0 20px 0;
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+
+        /* GRID DE SUBMENUS */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .menu-item {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-decoration: none;
+            color: var(--primary);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .menu-item i {
+            font-size: 1.8rem;
+            color: var(--accent);
+        }
+
+        .menu-item span {
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        #loader {
+            text-align: center;
+            padding: 50px;
+            color: #7f8c8d;
+        }
+
+        .hidden-permission {
+            display: none !important;
+        }
+
+        /* LANDSCAPE OPTIMIZATION */
+        @media (min-width: 700px) {
+            .menu-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .container {
+                max-width: 900px;
+            }
+
+            .chart-card {
+                min-height: 400px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <button class="nav-btn" onclick="window.location.href='index.html'"><i
+                    class="fas fa-arrow-left"></i></button>
+            <h2><i class="fas fa-crown" style="color: #f1c40f;"></i> Top Músicas</h2>
+            <button class="nav-btn" onclick="loadStats(true)"><i class="fas fa-sync-alt"></i></button>
+        </div>
+
+        <!-- GRÁFICO MAIS TOCADAS -->
+        <div class="chart-card">
+            <h3>Mais Tocadas (Repertório)</h3>
+            <div id="loader"><i class="fas fa-sync fa-spin"></i></div>
+            <div class="chart-wrapper">
+                <canvas id="chartMusicas"></canvas>
+            </div>
+        </div>
+
+        <!-- SUBMENUS -->
+        <div class="menu-grid">
+            <a href="Musicas.html" class="menu-item">
+                <i class="fas fa-list-ul"></i>
+                <span>Lista de Músicas</span>
+            </a>
+            <a href="Repertorio.html" class="menu-item">
+                <i class="fas fa-book-open"></i>
+                <span>Repertórios</span>
+            </a>
+            <a href="Cadastro de Repertorio.html" class="menu-item" id="menuMontarRepertorio">
+                <i class="fas fa-plus-circle" style="color: #27ae60;"></i>
+                <span>Montar Repertório</span>
+            </a>
+            <a href="Historico de Musicas.html" class="menu-item">
+                <i class="fas fa-history" style="color: #9b59b6;"></i>
+                <span>Histórico</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = APP_CONFIG.SCRIPT_URL;
+
+        function loadStats(force = false) {
+            const cached = localStorage.getItem('offline_repertorio');
+            if (!force && cached) {
+                document.getElementById('loader').style.display = 'none';
+                renderChart(JSON.parse(cached));
+                setTimeout(() => silentSync(), 1000);
+            } else {
+                fetchStats();
+            }
+        }
+
+        async function fetchStats() {
+            const loader = document.getElementById('loader');
+            loader.style.display = 'block';
+            try {
+                const res = await fetch(SCRIPT_URL + "?sheet=Repertório");
+                const json = await res.json();
+                localStorage.setItem('offline_repertorio', JSON.stringify(json.data));
+                renderChart(json.data);
+                loader.style.display = 'none';
+            } catch (e) {
+                loader.innerText = "Erro ao carregar dados.";
+            }
+        }
+
+        async function silentSync() {
+            try {
+                const res = await fetch(SCRIPT_URL + "?sheet=Repertório");
+                const json = await res.json();
+                localStorage.setItem('offline_repertorio', JSON.stringify(json.data));
+                renderChart(json.data);
+            } catch (e) { console.log("Silent sync failed"); }
+        }
+
+        let myChart = null;
+        function renderChart(data) {
+            const contagem = {};
+            data.forEach(m => {
+                if (m.Músicas) contagem[m.Músicas] = (contagem[m.Músicas] || 0) + 1;
+            });
+
+            const sorted = Object.entries(contagem)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            const ctx = document.getElementById('chartMusicas').getContext('2d');
+            if (myChart) myChart.destroy();
+
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(x => x[0]),
+                    datasets: [{
+                        data: sorted.map(x => x[1]),
+                        backgroundColor: 'rgba(52, 152, 219, 0.8)',
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } },
+                        y: { ticks: { font: { size: 10, weight: 'bold' } } }
+                    }
+                }
+            });
+        }
+
+        function applyPermissions() {
+            const user = JSON.parse(localStorage.getItem('user_token') || '{}');
+            if (user.Role) {
+                if (!hasPermission(user.Role, "menuMontarRepertorio", "menu")) {
+                    document.getElementById('menuMontarRepertorio')?.classList.add('hidden-permission');
+                }
+            }
+        }
+
+        window.onload = () => {
+            loadStats();
+            applyPermissions();
+        }
+    </script>
+</body>
+
+</html>

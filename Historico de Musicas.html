@@ -5,6 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="manifest.json">
+  <script src="config.js"></script>
+  <script src="permissions.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <style>
     :root {
@@ -153,34 +155,99 @@
     .hidden {
       display: none !important;
     }
+
+    /* HEADER AJUSTADO */
+    .header-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .header-main h2 {
+      margin: 0;
+      color: var(--primary);
+      font-size: 1.4rem;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      font-size: 1.3rem;
+      color: var(--primary);
+      cursor: pointer;
+      padding: 5px;
+    }
+
+    .hidden-permission {
+      display: none !important;
+    }
   </style>
 </head>
 
 <body>
 
-  <div class="search-outer">
-    <input type="text" id="searchInput" placeholder="Pesquisar por cantor ou música..." onkeyup="filterHistory()">
+  <div class="container">
+    <div class="header-main">
+      <button class="nav-btn" onclick="window.location.href='MenuMusicas.html'"><i
+          class="fas fa-arrow-left"></i></button>
+      <h2><i class="fas fa-history"></i> Histórico</h2>
+      <button class="nav-btn" onclick="loadData(true)"><i class="fas fa-sync-alt"></i></button>
+    </div>
+
+    <div class="search-outer" style="position:static; padding:0; border:none; margin-bottom:20px;">
+      <input type="text" id="searchInput" placeholder="Pesquisar por cantor ou música..." onkeyup="filterHistory()">
+    </div>
+
+    <div id="loader" class="loading"><i class="fas fa-history fa-spin"></i> Carregando histórico...</div>
+    <div id="main-content"></div>
   </div>
 
-  <div id="loader" class="loading"><i class="fas fa-history fa-spin"></i> Carregando histórico de músicas...</div>
-  <div id="main-content" class="container"></div>
 
   <script>
-    const url = "https://script.google.com/macros/s/AKfycbwjwn6-sdv8f4BLLwaqQWPc4yNI8CS40gO8J77GrJDqLncENJncWIfAV-FBkZuZP6k/exec?sheet=Historico%20de%20Músicas";
+    const SCRIPT_URL = APP_CONFIG.SCRIPT_URL;
+    const url = SCRIPT_URL + "?sheet=" + encodeURIComponent("Historico de Músicas");
 
-    async function loadData() {
+    async function loadData(force = false) {
+      const loader = document.getElementById('loader');
+      const cached = localStorage.getItem('offline_historico');
+
+      if (!force && cached) {
+        loader.style.display = 'none';
+        renderHistory(JSON.parse(cached));
+        setTimeout(() => silentSync(), 500);
+        return;
+      }
+
+      loader.style.display = 'block';
       try {
         const response = await fetch(url);
         const json = await response.json();
-        document.getElementById('loader').style.display = 'none';
+        localStorage.setItem('offline_historico', JSON.stringify(json.data));
         renderHistory(json.data);
+        loader.style.display = 'none';
+        if (force) alert("Histórico atualizado!");
       } catch (e) {
-        document.getElementById('loader').innerText = "Erro ao carregar histórico.";
+        if (cached) renderHistory(JSON.parse(cached));
+        else loader.innerText = "Erro ao carregar dados.";
       }
+    }
+
+    async function silentSync() {
+      try {
+        const response = await fetch(url);
+        const json = await response.json();
+        localStorage.setItem('offline_historico', JSON.stringify(json.data));
+        // Só renderiza de novo se não houver busca ativa
+        if (document.getElementById('searchInput').value === "") {
+          renderHistory(json.data);
+        }
+      } catch (e) { console.log("Silent sync failed"); }
     }
 
     function renderHistory(data) {
       const container = document.getElementById('main-content');
+      container.innerHTML = '';
 
       // Agrupar por Cantor
       const grouped = data.reduce((acc, item) => {
@@ -207,12 +274,14 @@
         </div>
         <div class="cantor-content">
           <div class="music-list">
-            ${musicas.map(m => `
-              <div class="music-item" data-search="${cantor.toLowerCase()} ${m.Músicas.toLowerCase()}">
-                <span class="music-name">${m.Músicas}</span>
+            ${musicas.map(m => {
+          const nomeMusica = m.Músicas || "Sem Nome";
+          return `
+              <div class="music-item" data-search="${cantor.toLowerCase()} ${nomeMusica.toLowerCase()}">
+                <span class="music-name">${nomeMusica}</span>
                 <span class="music-ton">${m.Tons || '--'}</span>
               </div>
-            `).join('')}
+            `}).join('')}
           </div>
         </div>
       `;
@@ -247,7 +316,19 @@
       });
     }
 
-    loadData();
+    function applyPermissions() {
+      const user = JSON.parse(localStorage.getItem('user_token') || '{}');
+      if (user.Role) {
+        if (!hasPermission(user.Role, "Historico de Musicas.html", "page")) {
+          window.location.href = 'index.html';
+        }
+      }
+    }
+
+    window.onload = () => {
+      loadData();
+      applyPermissions();
+    }
   </script>
 
 </body>
